@@ -23,7 +23,9 @@ export default function PriorityBadge({
     5: "bg-[var(--color-priority-5)]",
   };
   return (
-    <span className={`inline-flex min-h-8 min-w-8 items-center justify-center rounded-full px-2 text-sm text-surface ${colors[score]}`}>
+    <span
+      className={`inline-flex min-h-8 min-w-8 items-center justify-center rounded-full px-2 text-sm text-surface ${colors[score]}`}
+    >
       <strong>{score}</strong>
       {showLabel && <span className="ml-2">{labels[score]}</span>}
     </span>

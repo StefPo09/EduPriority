@@ -10,18 +10,24 @@ const links = [
 
 export default function Navigation() {
   return (
-    <aside className="w-full shrink-0 border-b border-border bg-surface px-5 py-[18px] md:w-[220px] md:border-b-0 md:border-r md:px-[21px] md:py-[27px]">
-      <NavLink to="/" className="mb-3 block text-lg font-bold tracking-[-.02em] text-ink md:mb-[34px]">
+    <aside className="w-full shrink-0 border-b border-border bg-surface p-4 shadow-sm md:min-h-screen md:w-60 md:border-b-0 md:border-r md:p-6 md:shadow-none">
+      <NavLink
+        to="/"
+        className="mb-3 block px-3 text-xl font-bold text-primary md:mb-8"
+      >
         EduPriority
       </NavLink>
-      <nav className="flex gap-1.5 overflow-x-auto md:grid" aria-label="Navigație principală">
+      <nav
+        className="flex gap-1.5 overflow-x-auto md:grid"
+        aria-label="Navigație principală"
+      >
         {links.map((link) => (
           <NavLink
             key={link.to}
             to={link.to}
             end={link.end}
-            className={({ isActive }) =>
-              `flex min-h-11 shrink-0 items-center rounded-lg px-3 text-sm text-muted transition-colors hover:bg-primary-soft hover:font-semibold hover:text-primary ${isActive ? "bg-primary-soft font-semibold text-primary" : ""}`
+                className={({ isActive }) =>
+                  `flex min-h-11 shrink-0 items-center rounded-lg px-3 text-sm text-muted transition-colors hover:bg-primary-soft hover:font-semibold hover:text-primary ${isActive ? "bg-primary-soft font-semibold text-primary" : ""}`
             }
           >
             {link.label}

@@ -13,7 +13,7 @@ function App() {
     <BrowserRouter>
       <div className="flex min-h-screen flex-col md:flex-row">
         <Navigation />
-        <main className="w-full max-w-262.5 px-5 py-7 md:px-11.5 md:py-10.25">
+        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-12 lg:py-10">
           <Routes>
             <Route path="/" element={<NewRequestPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
