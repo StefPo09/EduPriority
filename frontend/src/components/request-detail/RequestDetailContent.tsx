@@ -1,44 +1,16 @@
-import type { ComponentProps } from "react";
-import { Link as RouterLink } from "react-router";
 import PriorityBadge from "@/components/shared/PriorityBadge";
-
-type LinkProps = Omit<ComponentProps<typeof RouterLink>, "to"> & {
-  href: string;
-};
-
-function Link({ href, ...props }: LinkProps) {
-  return <RouterLink to={href} {...props} />;
-}
 
 export default function RequestDetailContent() {
   return (
     <>
-      <Link
-        className="mb-6 inline-block text-sm text-primary"
-        href="/dashboard"
-      >
-        ← Înapoi la dashboard
-      </Link>
-      <header className="mb-7">
-        <h1 className="mb-2 text-2xl font-bold tracking-tight">
-          Test vineri: inecuații cu modul
-        </h1>
-        <p className="leading-6 text-muted">
-          Maria Ionescu, 10B · Întrebare · Deadline: azi
-        </p>
-      </header>
       <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
         <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
-          <h2 className="mb-5 text-base font-semibold">
-            Cererea elevului
-          </h2>
+          <h2 className="mb-5 text-base font-semibold">Cererea elevului</h2>
           <p className="leading-6 text-muted">
             Nu înțeleg cum se rezolvă inecuațiile cu modul. Avem test vineri și
             nu am reușit exercițiile 4–7 din fișă.
           </p>
-          <h2 className="mb-5 mt-7 text-base font-semibold">
-            Clasificare AI
-          </h2>
+          <h2 className="mb-5 mt-7 text-base font-semibold">Clasificare AI</h2>
           <div className="flex flex-wrap gap-2">
             <span className="rounded-md bg-primary-soft px-2.5 py-2 text-sm font-semibold text-primary">
               Matematică

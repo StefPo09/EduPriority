@@ -2,6 +2,7 @@
 
 import type { ComponentProps } from "react";
 import { Link as RouterLink } from "react-router";
+import PageHeader from "../components/export/PageHeader";
 
 function Link({
   href,
@@ -12,19 +13,10 @@ function Link({
 
 export default function ExportPage() {
   return (
-    <div className="w-full max-w-2xl">
-      <header className="mb-6">
-        <h1 className="mb-2 text-2xl font-bold tracking-tight">
-          Export CSV / Print
-        </h1>
-        <p className="leading-6 text-muted">
-          Descarcă sau tipărește lista de cereri prioritizate.
-        </p>
-      </header>
+    <div className="w-full">
+      <PageHeader />
       <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
-        <h2 className="mb-5 text-base font-semibold">
-          20 cereri prioritizate
-        </h2>
+        <h2 className="mb-5 text-base font-semibold">20 cereri prioritizate</h2>
         <p className="mb-6 leading-6 text-muted">
           Fișierul include scorul, cererea, materia, urgența, timpul estimat și
           deadline-ul.
@@ -39,7 +31,10 @@ export default function ExportPage() {
           >
             Tipărește lista
           </button>
-          <Link className="text-sm text-primary" href="/dashboard">
+          <Link
+            className="text-sm text-primary"
+            href="/frontend/src/components/dashboard"
+          >
             ← Înapoi la dashboard
           </Link>
         </div>
