@@ -11,6 +11,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "EduPriority",
   description: "Prioritizează cererile elevilor cu ajutorul AI.",
+  icons: {
+    icon: "/edupriority-favicon.webp",
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

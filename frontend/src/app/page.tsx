@@ -15,6 +15,7 @@ import SchedulePage from "@/app-pages/SchedulePage";
 import ClassPage from "@/app-pages/ClassPage";
 import SettingsPage from "@/app-pages/SettingsPage";
 import Navigation from "@/components/shared/Navigation";
+import { ThemeProvider } from "@/components/shared/ThemeContext";
 
 function AppContent() {
   const { pathname } = useLocation();
@@ -59,9 +60,11 @@ function AppContent() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <AppContent />
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 
