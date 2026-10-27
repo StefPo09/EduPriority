@@ -7,7 +7,7 @@ export default function PageHeader() {
         </h1>
         <p className="text-muted">Privire de ansamblu pentru ziua de azi.</p>
       </div>
-      <span className="text-sm text-muted">Astazi, 25 octombrie</span>
+      <span className="text-sm text-muted">Astazi, {new Date().toLocaleString('ro-RO', { month: 'long', day: 'numeric' })}</span>
     </header>
   );
 }

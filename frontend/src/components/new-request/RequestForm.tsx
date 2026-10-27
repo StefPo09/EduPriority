@@ -2,14 +2,29 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { saveRequest, type RequestType } from "@/lib/requests";
 
 export default function RequestForm() {
   const navigate = useNavigate();
+  const [student, setStudent] = useState("");
+  const [type, setType] = useState<RequestType>("Întrebare");
+  const [deadline, setDeadline] = useState("");
   const [text, setText] = useState("");
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    navigate("/requests/demo");
+    if (!student.trim() || !deadline || !text.trim()) return;
+
+    const request = await saveRequest({
+      student: student.trim(),
+      type,
+      deadline,
+      text: text.trim(),
+      subject: "Nespecificată",
+      priority: 3,
+    });
+    window.dispatchEvent(new Event("edupriority:requests-updated"));
+    navigate(`/requests/${request.id}`);
   }
 
   return (
@@ -20,13 +35,17 @@ export default function RequestForm() {
           <input
             className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-ink outline-none placeholder:text-muted/80 focus:border-primary focus:ring-4 focus:ring-primary-soft"
             placeholder="Nume elev"
+            value={student}
+            onChange={(event) => setStudent(event.target.value)}
+            required
           />
         </label>
         <label className="grid gap-2 text-sm font-semibold text-ink">
           Tip
           <select
             className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-ink outline-none focus:border-primary focus:ring-4 focus:ring-primary-soft"
-            defaultValue="Întrebare"
+            value={type}
+            onChange={(event) => setType(event.target.value as RequestType)}
           >
             <option>Întrebare</option>
             <option>Temă</option>
@@ -38,6 +57,9 @@ export default function RequestForm() {
           <input
             className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-ink outline-none focus:border-primary focus:ring-4 focus:ring-primary-soft"
             type="date"
+            value={deadline}
+            onChange={(event) => setDeadline(event.target.value)}
+            required
           />
         </label>
       </div>
@@ -49,6 +71,7 @@ export default function RequestForm() {
           onChange={(event) => setText(event.target.value)}
           placeholder="Lipește aici cererea elevului..."
           rows={7}
+          required
         />
       </label>
       <div className="flex flex-wrap items-center gap-2.5">
@@ -57,17 +80,6 @@ export default function RequestForm() {
           type="submit"
         >
           Clasifică cu AI
-        </button>
-        <button
-          className="min-h-10 rounded-lg border border-border bg-surface px-4 font-semibold text-ink hover:border-primary-soft hover:bg-primary-soft hover:text-primary"
-          type="button"
-          onClick={() =>
-            setText(
-              "Nu înțeleg cum se rezolvă inecuațiile cu modul. Avem test vineri.",
-            )
-          }
-        >
-          Încarcă 20 cereri demo
         </button>
       </div>
     </form>

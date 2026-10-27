@@ -33,7 +33,7 @@ export default function ExportPage() {
           </button>
           <Link
             className="text-sm text-primary"
-            href="/frontend/src/components/dashboard"
+            href="/dashboard"
           >
             ← Înapoi la dashboard
           </Link>

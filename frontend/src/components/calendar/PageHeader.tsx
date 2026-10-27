@@ -1,5 +1,7 @@
 "use client";
 
+import { Link } from "react-router";
+
 export default function PageHeader({
   view,
   setView,
@@ -28,9 +30,9 @@ export default function PageHeader({
         >
           Luna
         </button>
-        <button className="min-h-10 rounded-lg bg-primary px-4 font-semibold text-surface">
+        <Link to="/requests/new" className="min-h-10 rounded-lg bg-primary px-4 py-2.5 font-semibold text-surface">
           + Adauga
-        </button>
+        </Link>
       </div>
     </header>
   );

@@ -8,13 +8,13 @@ export default function PageHeader() {
           Dashboard prioritizat
         </h1>
         <p className="leading-6 text-muted">
-          20 cereri · sortate după scor de prioritate
+          Cererile sunt sortate după scorul de prioritate
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-2.5">
         <Link
           className="min-h-10 rounded-lg border border-border bg-surface px-4 py-2.5 font-semibold text-ink hover:border-primary-soft hover:bg-primary-soft hover:text-primary"
-          to="/frontend/src/components/export"
+          to="/export"
         >
           Export CSV
         </Link>

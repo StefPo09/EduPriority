@@ -3,7 +3,7 @@
 import { NavLink } from "react-router";
 
 const links = [
-  { to: "/", label: "Acasa", end: true },
+  { to: "/home", label: "Acasa", end: true },
   { to: "/dashboard", label: "Cereri" },
   { to: "/calendar", label: "Calendar" },
   { to: "/materials", label: "Materiale" },
@@ -45,7 +45,7 @@ export default function Navigation() {
         + Cerere noua
       </NavLink>
       <NavLink
-        to="/frontend/src/components/export"
+        to="/export"
         className="mt-2 block px-3 py-2 text-center text-sm text-muted hover:text-primary"
       >
         Export CSV / Print

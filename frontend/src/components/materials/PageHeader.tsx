@@ -1,4 +1,4 @@
-export default function PageHeader() {
+export default function PageHeader({ onUpload }: { onUpload: (file: File) => void }) {
   return (
     <header className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
       <div>
@@ -9,7 +9,11 @@ export default function PageHeader() {
       </div>
       <label className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-lg bg-primary px-4 font-semibold text-surface">
         Upload
-        <input className="sr-only" type="file" />
+        <input className="sr-only" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt" onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) onUpload(file);
+          event.target.value = "";
+        }} />
       </label>
     </header>
   );
