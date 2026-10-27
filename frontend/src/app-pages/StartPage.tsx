@@ -1,10 +1,13 @@
 import { Link } from "react-router";
+import BrandLogo from "../components/shared/BrandLogo";
 
 export default function StartPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
       <section className="w-full max-w-lg rounded-xl border border-border bg-surface p-8 text-center sm:p-10">
-        <p className="text-xl font-bold text-primary">EduPriority</p>
+        <div className="flex justify-center">
+          <BrandLogo />
+        </div>
         <h1 className="mt-8 text-3xl font-bold tracking-tight">
           Organizează cererile elevilor mai simplu.
         </h1>

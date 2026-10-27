@@ -15,6 +15,16 @@
   --color-priority-1: #4B5563;
 }
 
+[data-theme="dark"] {
+  --primary: #4C7BFF;
+  --primary-soft: #1F2F5C;
+  --ink: #E6EAF2;
+  --muted: #9AA7C0;
+  --border: #2A3446;
+  --background: #0F1623;
+  --surface: #172033;
+}
+
 @theme {
   --color-primary: var(--primary);
   --color-primary-soft: var(--primary-soft);

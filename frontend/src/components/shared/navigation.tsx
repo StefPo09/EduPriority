@@ -1,6 +1,7 @@
 "use client";
 
 import { NavLink } from "react-router";
+import BrandLogo from "./BrandLogo";
 
 const links = [
   { to: "/home", label: "Acasa", end: true },
@@ -14,12 +15,12 @@ const links = [
 
 export default function Navigation() {
   return (
-    <aside className="w-full shrink-0 border-b border-border bg-surface p-4 shadow-sm md:min-h-screen md:w-60 md:border-b-0 md:border-r md:p-6 md:shadow-none">
+    <aside className="w-full shrink-0 border-b border-border bg-surface p-4 shadow-sm md:min-h-screen md:w-72 md:border-b-0 md:border-r md:p-6 md:shadow-none">
       <NavLink
         to="/"
-        className="mb-3 block px-3 text-xl font-bold text-primary md:mb-8"
+        className="mb-3 block md:mb-8"
       >
-        EduPriority
+        <BrandLogo width={260} height={65} />
       </NavLink>
       <nav
         className="flex gap-1.5 overflow-x-auto md:grid"
