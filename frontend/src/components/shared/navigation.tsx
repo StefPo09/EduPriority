@@ -3,9 +3,13 @@
 import { NavLink } from "react-router";
 
 const links = [
-  { to: "/", label: "+ Cerere nouă", end: true },
-  { to: "/dashboard", label: "Dashboard" },
-  { to: "/export", label: "Export CSV / Print" },
+  { to: "/home", label: "Acasa", end: true },
+  { to: "/dashboard", label: "Cereri" },
+  { to: "/calendar", label: "Calendar" },
+  { to: "/materials", label: "Materiale" },
+  { to: "/schedule", label: "Orar" },
+  { to: "/class", label: "Clasa" },
+  { to: "/settings", label: "Setari" },
 ];
 
 export default function Navigation() {
@@ -26,14 +30,26 @@ export default function Navigation() {
             key={link.to}
             to={link.to}
             end={link.end}
-                className={({ isActive }) =>
-                  `flex min-h-11 shrink-0 items-center rounded-lg px-3 text-sm text-muted transition-colors hover:bg-primary-soft hover:font-semibold hover:text-primary ${isActive ? "bg-primary-soft font-semibold text-primary" : ""}`
+            className={({ isActive }) =>
+              `flex min-h-11 shrink-0 items-center rounded-lg px-3 text-sm text-muted transition-colors hover:bg-primary-soft hover:font-semibold hover:text-primary ${isActive ? "bg-primary-soft font-semibold text-primary" : ""}`
             }
           >
             {link.label}
           </NavLink>
         ))}
       </nav>
+      <NavLink
+        to="/requests/new"
+        className="mt-4 block rounded-lg bg-primary px-3 py-2.5 text-center text-sm font-semibold text-surface hover:brightness-90"
+      >
+        + Cerere noua
+      </NavLink>
+      <NavLink
+        to="/export"
+        className="mt-2 block px-3 py-2 text-center text-sm text-muted hover:text-primary"
+      >
+        Export CSV / Print
+      </NavLink>
     </aside>
   );
 }

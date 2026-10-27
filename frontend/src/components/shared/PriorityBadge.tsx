@@ -1,4 +1,4 @@
-type Priority = 1 | 2 | 3 | 4 | 5;
+export type Priority = 1 | 2 | 3 | 4 | 5;
 
 const labels: Record<Priority, string> = {
   1: "Minim",
