@@ -5,7 +5,10 @@ type Account = {
   name: string;
   email: string;
   passwordHash: string;
+  role: AccountRole;
 };
+
+export type AccountRole = "teacher" | "student";
 
 const accounts: Account[] = [];
 
@@ -14,7 +17,12 @@ function hashPassword(password: string) {
   return `${salt}:${scryptSync(password, salt, 64).toString("hex")}`;
 }
 
-export function createAccount(name: string, email: string, password: string) {
+export function createAccount(
+  name: string,
+  email: string,
+  password: string,
+  role: AccountRole,
+) {
   const normalizedEmail = email.toLowerCase();
   if (accounts.some((account) => account.email === normalizedEmail)) {
     return undefined;
@@ -25,13 +33,23 @@ export function createAccount(name: string, email: string, password: string) {
     name,
     email: normalizedEmail,
     passwordHash: hashPassword(password),
+    role,
   };
 
   accounts.push(account);
-  return { id: account.id, name: account.name, email: account.email };
+  return {
+    id: account.id,
+    name: account.name,
+    email: account.email,
+    role: account.role,
+  };
 }
 
-export function authenticateAccount(email: string, password: string) {
+export function authenticateAccount(
+  email: string,
+  password: string,
+  role: AccountRole,
+) {
   const account = accounts.find(
     (item) => item.email === email.toLowerCase(),
   );
@@ -43,7 +61,20 @@ export function authenticateAccount(email: string, password: string) {
     return undefined;
   }
 
-  return { id: account.id, name: account.name, email: account.email };
+  if (account.role !== role) return undefined;
+
+  return {
+    id: account.id,
+    name: account.name,
+    email: account.email,
+    role: account.role,
+  };
+}
+
+export function listTeachers() {
+  return accounts
+    .filter((account) => account.role === "teacher")
+    .map(({ id, name }) => ({ id, name }));
 }
 
 /*

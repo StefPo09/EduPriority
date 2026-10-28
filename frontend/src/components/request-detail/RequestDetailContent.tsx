@@ -42,6 +42,11 @@ export default function RequestDetailContent() {
             <strong className="text-ink">Rezumat:</strong> cerere trimisă de{" "}
             {request.student}.
           </p>
+          {request.teacher && (
+            <p className="mt-2 leading-6 text-muted">
+              <strong className="text-ink">Profesor:</strong> {request.teacher}
+            </p>
+          )}
         </section>
         <section className="rounded-xl border border-primary-soft bg-primary-soft p-5 sm:p-6">
           <h2 className="mb-5 text-base font-semibold">Sugestie</h2>

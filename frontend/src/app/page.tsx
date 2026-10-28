@@ -1,7 +1,14 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router";
+import {
+  BrowserRouter,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router";
+import { useEffect } from "react";
 import NewRequestPage from "@/app-pages/NewRequestPage";
 import DashboardPage from "@/app-pages/DashboardPage";
 import RequestDetailPage from "@/app-pages/RequestDetailPage";
@@ -19,8 +26,16 @@ import { ThemeProvider } from "@/components/shared/ThemeContext";
 
 function AppContent() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const publicPage =
     pathname === "/" || pathname === "/signup" || pathname === "/login";
+
+  useEffect(() => {
+    if (publicPage) return;
+    if (!localStorage.getItem("edupriority:account")) {
+      navigate("/login", { replace: true });
+    }
+  }, [navigate, publicPage]);
 
   return (
     <div

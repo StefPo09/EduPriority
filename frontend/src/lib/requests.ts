@@ -10,7 +10,9 @@ export type StudentRequest = {
   createdAt: string;
   subject: string;
   priority: Priority;
-};
+  teacherId?: string;
+  teacher?: string;
+}
 
 export async function getRequests(): Promise<StudentRequest[]> {
   const response = await fetch("/api/requests", { cache: "no-store" });

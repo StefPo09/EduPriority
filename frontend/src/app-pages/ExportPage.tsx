@@ -3,6 +3,7 @@
 import type { ComponentProps } from "react";
 import { Link as RouterLink } from "react-router";
 import PageHeader from "../components/export/PageHeader";
+import { getRequests } from "@/lib/requests";
 
 function Link({
   href,
@@ -12,6 +13,33 @@ function Link({
 }
 
 export default function ExportPage() {
+  async function downloadCsv() {
+    const requests = await getRequests();
+    const rows = [
+      ["Scor", "Cerere", "Materie", "Urgență", "Deadline"],
+      ...requests.map((request) => [
+        String(request.priority),
+        request.text,
+        request.subject,
+        request.type,
+        request.deadline,
+      ]),
+    ];
+    const csv = rows
+      .map((row) =>
+        row.map((value) => `"${value.replaceAll('"', '""')}"`).join(","),
+      )
+      .join("\r\n");
+    const url = URL.createObjectURL(
+      new Blob([csv], { type: "text/csv;charset=utf-8" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "edupriority-cereri.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="w-full">
       <PageHeader />
@@ -22,7 +50,11 @@ export default function ExportPage() {
           deadline-ul.
         </p>
         <div className="flex flex-wrap items-center gap-2.5">
-          <button className="min-h-10 rounded-lg bg-primary px-4 font-semibold text-surface hover:brightness-90">
+          <button
+            className="min-h-10 rounded-lg bg-primary px-4 font-semibold text-surface hover:brightness-90"
+            type="button"
+            onClick={() => void downloadCsv()}
+          >
             Descarcă CSV
           </button>
           <button
