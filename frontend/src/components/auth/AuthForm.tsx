@@ -8,6 +8,7 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<"teacher" | "student">("student");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -20,10 +21,27 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
       const response = await fetch(`/api/auth/${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, role }),
       });
-      const result = (await response.json()) as { error?: string };
+      const result = (await response.json()) as {
+        error?: string;
+        id?: string;
+        name?: string;
+        email?: string;
+        role?: "teacher" | "student";
+      };
       if (!response.ok) throw new Error(result.error ?? "A apărut o eroare.");
+      if (result.id && result.name && result.email && result.role) {
+        localStorage.setItem(
+          "edupriority:account",
+          JSON.stringify({
+            id: result.id,
+            name: result.name,
+            email: result.email,
+            role: result.role,
+          }),
+        );
+      }
       navigate("/home");
     } catch (submissionError) {
       setError(
@@ -49,6 +67,31 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
           />
         </label>
       )}
+      <fieldset className="grid gap-2 text-sm font-semibold">
+        <legend>Tip cont</legend>
+        <div className="grid grid-cols-2 gap-2">
+          {(["student", "teacher"] as const).map((option) => (
+            <label
+              className={`cursor-pointer rounded-lg border px-3 py-2.5 text-center ${
+                role === option
+                  ? "border-primary bg-primary-soft text-primary"
+                  : "border-border"
+              }`}
+              key={option}
+            >
+              <input
+                className="sr-only"
+                type="radio"
+                name="role"
+                value={option}
+                checked={role === option}
+                onChange={() => setRole(option)}
+              />
+              {option === "student" ? "Elev" : "Profesor"}
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <label className="grid gap-2 text-sm font-semibold">
         Email
         <input

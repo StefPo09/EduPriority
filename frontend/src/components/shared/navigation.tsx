@@ -1,6 +1,7 @@
 "use client";
 
 import { NavLink } from "react-router";
+import { useState } from "react";
 import BrandLogo from "./BrandLogo";
 
 const links = [
@@ -14,6 +15,26 @@ const links = [
 ];
 
 export default function Navigation() {
+  const [isStudent] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const account = localStorage.getItem("edupriority:account");
+    if (account) {
+      try {
+        const parsed = JSON.parse(account) as { role?: string };
+        return parsed.role === "student";
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  });
+
+  const visibleLinks = isStudent
+    ? links.filter((link) =>
+        ["/home", "/dashboard", "/settings"].includes(link.to),
+      )
+    : links;
+
   return (
     <aside className="w-full shrink-0 border-b border-border bg-surface p-4 shadow-sm md:min-h-screen md:w-72 md:border-b-0 md:border-r md:p-6 md:shadow-none">
       <NavLink
@@ -26,7 +47,7 @@ export default function Navigation() {
         className="flex gap-1.5 overflow-x-auto md:grid"
         aria-label="Navigație principală"
       >
-        {links.map((link) => (
+        {visibleLinks.map((link) => (
           <NavLink
             key={link.to}
             to={link.to}
@@ -43,7 +64,7 @@ export default function Navigation() {
         to="/requests/new"
         className="mt-4 block rounded-lg bg-primary px-3 py-2.5 text-center text-sm font-semibold text-surface hover:brightness-90"
       >
-        + Cerere noua
+        {isStudent ? "+ Întreabă un profesor" : "+ Cerere noua"}
       </NavLink>
       <NavLink
         to="/export"

@@ -1,18 +1,20 @@
 import { NextResponse } from "next/server";
-import { createAccount } from "@/lib/server-auth";
+import { createAccount, type AccountRole } from "@/lib/server-auth";
 
 export async function POST(request: Request) {
   const body = (await request.json()) as {
     name?: string;
     email?: string;
     password?: string;
+    role?: AccountRole;
   };
 
   if (
     !body.name?.trim() ||
     !body.email?.trim() ||
     !body.password ||
-    body.password.length < 8
+    body.password.length < 8 ||
+    (body.role !== "teacher" && body.role !== "student")
   ) {
     return NextResponse.json(
       {
@@ -23,7 +25,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const account = createAccount(body.name.trim(), body.email.trim(), body.password);
+  const account = createAccount(
+    body.name.trim(),
+    body.email.trim(),
+    body.password,
+    body.role,
+  );
   if (!account) {
     return NextResponse.json(
       { error: "Există deja un cont cu acest email." },
