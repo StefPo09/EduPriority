@@ -5,12 +5,15 @@ import { Link, useNavigate } from "react-router";
 
 export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const navigate = useNavigate();
-  const [name, setName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"teacher" | "student">("student");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const fullName = [lastName, firstName].filter(Boolean).join(" ").trim();
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -21,7 +24,12 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
       const response = await fetch(`/api/auth/${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role }),
+        body: JSON.stringify({
+          name: mode === "login" ? email : fullName,
+          email,
+          password,
+          role,
+        }),
       });
       const result = (await response.json()) as {
         error?: string;
@@ -57,15 +65,26 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
   return (
     <form className="grid gap-4" onSubmit={submit}>
       {mode === "signup" && (
-        <label className="grid gap-2 text-sm font-semibold">
-          Nume
-          <input
-            className="rounded-lg border border-border px-3 py-2.5 font-normal outline-none"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            required
-          />
-        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="grid gap-2 text-sm font-semibold">
+            Nume
+            <input
+              className="rounded-lg border border-border px-3 py-2.5 font-normal outline-none"
+              value={lastName}
+              onChange={(event) => setLastName(event.target.value)}
+              required
+            />
+          </label>
+          <label className="grid gap-2 text-sm font-semibold">
+            Prenume
+            <input
+              className="rounded-lg border border-border px-3 py-2.5 font-normal outline-none"
+              value={firstName}
+              onChange={(event) => setFirstName(event.target.value)}
+              required
+            />
+          </label>
+        </div>
       )}
       <fieldset className="grid gap-2 text-sm font-semibold">
         <legend>Tip cont</legend>
