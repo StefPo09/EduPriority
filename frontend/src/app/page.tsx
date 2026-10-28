@@ -21,7 +21,7 @@ import MaterialsPage from "@/app-pages/MaterialsPage";
 import SchedulePage from "@/app-pages/SchedulePage";
 import ClassPage from "@/app-pages/ClassPage";
 import SettingsPage from "@/app-pages/SettingsPage";
-import Navigation from "@/components/shared/Navigation";
+import Navigation from "@/components/shared/navigation";
 import { ThemeProvider } from "@/components/shared/ThemeContext";
 
 function AppContent() {
