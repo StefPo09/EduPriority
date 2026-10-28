@@ -60,7 +60,6 @@ export default function SettingsPage() {
               Scoala
               <input
                 className="rounded-lg border border-border px-3 py-2.5 font-normal"
-                defaultValue="Liceul Teoretic Mihai Eminescu"
               />
             </label>
           </div>
