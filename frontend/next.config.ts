@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
       { source: "/requests/:id", destination: "/" },
       { source: "/dashboard", destination: "/" },
       { source: "/calendar", destination: "/" },
+      { source: "/home/calendar", destination: "/" },
       { source: "/materials", destination: "/" },
       { source: "/schedule", destination: "/" },
       { source: "/class", destination: "/" },

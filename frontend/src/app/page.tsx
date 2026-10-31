@@ -21,7 +21,7 @@ import MaterialsPage from "@/app-pages/MaterialsPage";
 import SchedulePage from "@/app-pages/SchedulePage";
 import ClassPage from "@/app-pages/ClassPage";
 import SettingsPage from "@/app-pages/SettingsPage";
-import Navigation from "@/components/shared/Navigation";
+import Navigation from "@/components/shared/navigation";
 import { ThemeProvider } from "@/components/shared/ThemeContext";
 
 function AppContent() {
@@ -62,6 +62,7 @@ function AppContent() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/requests/:id" element={<RequestDetailPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/home/calendar" element={<CalendarPage />} />
           <Route path="/materials" element={<MaterialsPage />} />
           <Route path="/schedule" element={<SchedulePage />} />
           <Route path="/class" element={<ClassPage />} />
