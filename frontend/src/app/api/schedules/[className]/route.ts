@@ -6,5 +6,6 @@ export async function GET(
   context: { params: Promise<{ className: string }> },
 ) {
   const { className } = await context.params;
-  return NextResponse.json(findSchedule(decodeURIComponent(className)));
+  const schedule = await findSchedule(decodeURIComponent(className));
+  return NextResponse.json(schedule);
 }

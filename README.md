@@ -1,1 +1,53 @@
 # EduPriority
+
+Platformă educațională inteligentă pentru prioritizarea și organizarea solicitărilor elevilor către profesori (întrebări, teme, recuperări), folosind clasificare automată asistată de AI.
+
+---
+
+## 🎯 Ideea de bază (Core Concept)
+
+Profesorii sunt adesea asaltați de numeroase mesaje, solicitări de recuperare și întrebări nestructurate de la elevi pe platforme diverse. Fără un sistem dedicat de triere și prioritizare, întrebările urgente înainte de teste sau recuperările cu termen limită critic riscă să se piardă, iar timpul profesorilor este irosit cu trierea manuală.
+
+**EduPriority** rezolvă această problemă:
+1. **Punct unic de contact elev-profesor**: Elevii trimit întrebări, teme sau solicitări de recuperare specificând profesorul și data limită (deadline).
+2. **Prioritizare și clasificare AI**: Fiecare cerere este analizată automat în limba română pentru detectarea materiei (Matematică, Informatică, Fizică, Română etc.), calculul scorului de urgență de la **1 (Minim) la 5 (Critic)**, estimarea timpului de rezolvare și generarea unei acțiuni recomandate pentru profesor.
+3. **Tablou de bord & Gestionare urgențe**: Profesorul vede direct ce este critic astăzi, cererile ordonate după prioritate, calendarul termenelor limită, orarul claselor și materialele didactice încărcate.
+4. **Analiză & Export**: Statistici despre timpul economisit, rata de rezolvare și posibilitatea de a exporta lista completă în format CSV/print.
+
+---
+
+## 📁 Structura proiectului
+
+- **`frontend/`**: Aplicație web Next.js 16 + React 19 + TailwindCSS v4 + React Router.
+- **`backend/`**: Serviciu API REST complet în Python (FastAPI + SQLAlchemy + SQLite + motor de clasificare AI).
+
+---
+
+## 🚀 Pornirea aplicației
+
+### 1. Pornire Backend (Python)
+Deschide un terminal în folderul `backend`:
+```bash
+cd backend
+python -m pip install -r requirements.txt
+python run.py
+```
+Backend-ul va porni la adresa: **`http://127.0.0.1:8000`**
+- Documentație Swagger UI: **`http://127.0.0.1:8000/docs`**
+
+### 2. Pornire Frontend (Next.js)
+Într-un alt terminal, în folderul `frontend`:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Aplicația va fi accesibilă în browser la: **`http://localhost:3000`**
+
+---
+
+## 👤 Conturi implicite pentru testare
+
+Baza de date este pre-populată cu date de test:
+- **Profesor:** `prof.popescu@edupriority.ro` / `Profesor123!`
+- **Elev:** `alex.radu@edupriority.ro` / `Student123!`

@@ -24,29 +24,61 @@ export type Schedule = {
   curriculum: Array<{ title: string; status: string }>;
 };
 
+const BACKEND_URL = process.env.BACKEND_URL || "http://127.0.0.1:8000";
 const requests: StudentRequest[] = [];
 const materials: Material[] = [];
 const classSummaries: ClassSummary[] = [];
 const schedules: Schedule[] = [];
 
 /*
- * Database boundary:
- * Replace these functions with queries from the database when it is added.
- * The API route already keeps the UI independent from the database client.
+ * Connected to Python FastAPI backend at BACKEND_URL.
+ * Includes graceful fallback if backend is offline.
  */
-export function listRequests() {
+export async function listRequests(): Promise<StudentRequest[]> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/requests`, { cache: "no-store" });
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch {
+    // Backend offline, fallback
+  }
+
   return [...requests].sort(
     (first, second) => second.priority - first.priority,
   );
 }
 
-export function findRequest(id: string) {
+export async function findRequest(id: string): Promise<StudentRequest | undefined> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/requests/${id}`, { cache: "no-store" });
+    if (response.ok) {
+      return await response.json();
+    }
+    if (response.status === 404) return undefined;
+  } catch {
+    // Backend offline, fallback
+  }
+
   return requests.find((request) => request.id === id);
 }
 
-export function insertRequest(
+export async function insertRequest(
   input: Omit<StudentRequest, "id" | "createdAt">,
-) {
+): Promise<StudentRequest> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/requests`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch {
+    // Backend offline, fallback
+  }
+
   const request: StudentRequest = {
     ...input,
     id: crypto.randomUUID(),
@@ -56,15 +88,48 @@ export function insertRequest(
   return request;
 }
 
-export function listMaterials() {
+export async function updateRequest(
+  id: string,
+  updates: Partial<StudentRequest> & { status?: string },
+): Promise<StudentRequest | undefined> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/requests/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    });
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch {
+    // Backend offline, fallback
+  }
+
+  const req = requests.find((r) => r.id === id);
+  if (req) {
+    Object.assign(req, updates);
+  }
+  return req;
+}
+
+export async function listMaterials(): Promise<Material[]> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/materials`, { cache: "no-store" });
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch {
+    // Backend offline, fallback
+  }
+
   return materials;
 }
 
-export function insertMaterial(file: {
+export async function insertMaterial(file: {
   name: string;
   size: number;
   type: string;
-}) {
+}): Promise<Material> {
   const material: Material = {
     id: crypto.randomUUID(),
     name: file.name,
@@ -78,7 +143,16 @@ export function insertMaterial(file: {
   return material;
 }
 
-export function findClassSummary(className: string) {
+export async function findClassSummary(className: string): Promise<ClassSummary> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/classes/${encodeURIComponent(className)}`, { cache: "no-store" });
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch {
+    // Backend offline, fallback
+  }
+
   return (
     classSummaries.find((summary) => summary.className === className) ?? {
       className,
@@ -90,11 +164,29 @@ export function findClassSummary(className: string) {
   );
 }
 
-export function listClasses() {
+export async function listClasses(): Promise<string[]> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/classes`, { cache: "no-store" });
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch {
+    // Backend offline, fallback
+  }
+
   return classSummaries.map((summary) => summary.className);
 }
 
-export function findSchedule(className: string): Schedule {
+export async function findSchedule(className: string): Promise<Schedule> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/schedules/${encodeURIComponent(className)}`, { cache: "no-store" });
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch {
+    // Backend offline, fallback
+  }
+
   return (
     schedules.find((schedule) => schedule.className === className) ?? {
       className,
@@ -104,7 +196,16 @@ export function findSchedule(className: string): Schedule {
   );
 }
 
-export function getOverview() {
+export async function getOverview() {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/overview`, { cache: "no-store" });
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch {
+    // Backend offline, fallback
+  }
+
   const today = new Date().toISOString().slice(0, 10);
   const todayRequests = requests.filter(
     (request) => request.deadline === today,
@@ -118,8 +219,7 @@ export function getOverview() {
 
   return {
     urgent: {
-      critical: todayRequests.filter((request) => request.priority === 5)
-        .length,
+      critical: todayRequests.filter((request) => request.priority === 5).length,
       medium: todayRequests.filter((request) => request.priority === 3).length,
       low: todayRequests.filter((request) => request.priority <= 2).length,
     },
