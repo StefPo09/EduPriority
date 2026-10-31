@@ -30,5 +30,11 @@ if RAW_CORS_ORIGINS:
 else:
     CORS_ORIGINS = DEFAULT_CORS_ORIGINS
 
+CORS_ORIGIN_REGEX = (
+    r"https?://(?:localhost|127\.0\.0\.1|10(?:\.\d{1,3}){3}|"
+    r"172\.(?:1[6-9]|2\d|3[01])(?:\.\d{1,3}){2}|"
+    r"192\.168(?:\.\d{1,3}){2})(?::\d{1,5})?"
+)
+
 # Optional AI API Key (Gemini)
 GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
