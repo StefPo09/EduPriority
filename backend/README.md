@@ -85,17 +85,22 @@ backend/
 ## 🛠️ Instalare și Rulare
 
 ### 1. Instalare dependențe
+Din folderul `backend`, creează și activează mediul virtual:
 ```bash
-pip install -r requirements.txt
+python -m venv venv
+# Windows PowerShell:
+.\venv\Scripts\Activate.ps1
+# macOS/Linux:
+# source venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
 ### 2. Pornirea serverului backend
 Din folderul `backend`:
 ```bash
+# Activează mai întâi mediul virtual conform pașilor de mai sus.
 python run.py
-# sau
-py run.py
-# sau cu uvicorn direct:
+# Alternativ, cu uvicorn:
 uvicorn app.main:app --host 0.0.0.0 --reload --port 8000
 ```
 Serverul va asculta pe toate interfețele de rețea, portul **`8000`**. Local îl poți accesa la **`http://127.0.0.1:8000`**, iar de pe alt dispozitiv din aceeași rețea la **`http://IP-ul-calculatorului:8000`**.

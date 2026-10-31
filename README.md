@@ -29,6 +29,11 @@ Profesorii sunt adesea asaltați de numeroase mesaje, solicitări de recuperare 
 Deschide un terminal în folderul `backend`:
 ```bash
 cd backend
+python -m venv venv
+# Windows PowerShell:
+.\venv\Scripts\Activate.ps1
+# macOS/Linux:
+# source venv/bin/activate
 python -m pip install -r requirements.txt
 python run.py
 ```
