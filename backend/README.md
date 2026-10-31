@@ -96,14 +96,16 @@ python run.py
 # sau
 py run.py
 # sau cu uvicorn direct:
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --host 0.0.0.0 --reload --port 8000
 ```
-Serverul va porni la adresa: **`http://127.0.0.1:8000`**
+Serverul va asculta pe toate interfețele de rețea, portul **`8000`**. Local îl poți accesa la **`http://127.0.0.1:8000`**, iar de pe alt dispozitiv din aceeași rețea la **`http://IP-ul-calculatorului:8000`**.
 
 ### 3. Documentație interactivă Swagger UI
 Odată pornit serverul, deschide în browser:
 - Swagger UI: **`http://127.0.0.1:8000/docs`**
 - ReDoc: **`http://127.0.0.1:8000/redoc`**
+
+Pentru acces din rețeaua locală, folosește adresa IPv4 a calculatorului gazdă (o poți afla cu `ipconfig` pe Windows) și permite portul `8000` în Windows Firewall pentru profilul de rețea privată. CORS acceptă automat origin-uri localhost și adrese IPv4 private; poți suprascrie lista explicită cu variabila `CORS_ORIGINS`, separată prin virgule.
 
 ---
 
