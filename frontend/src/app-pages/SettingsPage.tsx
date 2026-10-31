@@ -24,9 +24,6 @@ export default function SettingsPage() {
       return undefined;
     }
   });
-  const [lastName = "", ...firstNameParts] =
-    account?.name.trim().split(/\s+/).filter(Boolean) ?? [];
-  const firstName = firstNameParts.join(" ");
 
   return (
     <div className="w-full">
@@ -39,14 +36,7 @@ export default function SettingsPage() {
               Nume
               <input
                 className="rounded-lg border border-border px-3 py-2.5 font-normal"
-                defaultValue={lastName}
-              />
-            </label>
-            <label className="grid gap-2 text-sm font-semibold">
-              Prenume
-              <input
-                className="rounded-lg border border-border px-3 py-2.5 font-normal"
-                defaultValue={firstName}
+                defaultValue={account?.name ?? ""}
               />
             </label>
             <label className="grid gap-2 text-sm font-semibold">
@@ -60,6 +50,7 @@ export default function SettingsPage() {
               Scoala
               <input
                 className="rounded-lg border border-border px-3 py-2.5 font-normal"
+                defaultValue="Liceul Teoretic Mihai Eminescu"
               />
             </label>
           </div>

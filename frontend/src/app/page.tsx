@@ -62,6 +62,7 @@ function AppContent() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/requests/:id" element={<RequestDetailPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/home/calendar" element={<CalendarPage />} />
           <Route path="/materials" element={<MaterialsPage />} />
           <Route path="/schedule" element={<SchedulePage />} />
           <Route path="/class" element={<ClassPage />} />

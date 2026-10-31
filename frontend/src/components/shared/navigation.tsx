@@ -37,9 +37,12 @@ export default function Navigation() {
 
   return (
     <aside className="w-full shrink-0 border-b border-border bg-surface p-4 shadow-sm md:min-h-screen md:w-72 md:border-b-0 md:border-r md:p-6 md:shadow-none">
-      <div className="mb-3 block md:mb-8">
+      <NavLink
+        to="/"
+        className="mb-3 block md:mb-8"
+      >
         <BrandLogo width={260} height={65} />
-      </div>
+      </NavLink>
       <nav
         className="flex gap-1.5 overflow-x-auto md:grid"
         aria-label="Navigație principală"
