@@ -12,7 +12,11 @@ export type StudentRequest = {
   priority: Priority;
   teacherId?: string;
   teacher?: string;
-}
+  status?: "pending" | "resolved" | string;
+  estimatedTime?: string;
+  suggestedAction?: string;
+  aiSummary?: string;
+};
 
 export async function getRequests(): Promise<StudentRequest[]> {
   const response = await fetch("/api/requests", { cache: "no-store" });
@@ -36,5 +40,18 @@ export async function saveRequest(
     body: JSON.stringify(request),
   });
   if (!response.ok) throw new Error("Cererea nu a putut fi salvată.");
+  return response.json();
+}
+
+export async function updateRequest(
+  id: string,
+  updates: Partial<StudentRequest>,
+): Promise<StudentRequest> {
+  const response = await fetch(`/api/requests/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updates),
+  });
+  if (!response.ok) throw new Error("Cererea nu a putut fi actualizată.");
   return response.json();
 }

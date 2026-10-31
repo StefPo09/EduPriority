@@ -10,6 +10,7 @@ type Account = {
 
 export type AccountRole = "teacher" | "student";
 
+const BACKEND_URL = process.env.BACKEND_URL || "http://127.0.0.1:8000";
 const accounts: Account[] = [];
 
 function hashPassword(password: string) {
@@ -17,12 +18,34 @@ function hashPassword(password: string) {
   return `${salt}:${scryptSync(password, salt, 64).toString("hex")}`;
 }
 
-export function createAccount(
+export async function createAccount(
   name: string,
   email: string,
   password: string,
   role: AccountRole,
 ) {
+  // First attempt to create account in the Python backend
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/auth/signup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password, role }),
+    });
+    if (response.status === 201) {
+      return (await response.json()) as {
+        id: string;
+        name: string;
+        email: string;
+        role: AccountRole;
+      };
+    }
+    if (response.status === 409) {
+      return undefined;
+    }
+  } catch {
+    // Backend offline, fallback to in-memory store
+  }
+
   const normalizedEmail = email.toLowerCase();
   if (accounts.some((account) => account.email === normalizedEmail)) {
     return undefined;
@@ -45,11 +68,30 @@ export function createAccount(
   };
 }
 
-export function authenticateAccount(
+export async function authenticateAccount(
   email: string,
   password: string,
   role: AccountRole,
 ) {
+  // First attempt to authenticate against Python backend
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, role }),
+    });
+    if (response.ok) {
+      return (await response.json()) as {
+        id: string;
+        name: string;
+        email: string;
+        role: AccountRole;
+      };
+    }
+  } catch {
+    // Backend offline, fallback to in-memory store
+  }
+
   const account = accounts.find(
     (item) => item.email === email.toLowerCase(),
   );
@@ -71,13 +113,19 @@ export function authenticateAccount(
   };
 }
 
-export function listTeachers() {
+export async function listTeachers() {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/teachers`, {
+      cache: "no-store",
+    });
+    if (response.ok) {
+      return (await response.json()) as Array<{ id: string; name: string }>;
+    }
+  } catch {
+    // Backend offline, fallback to in-memory store
+  }
+
   return accounts
     .filter((account) => account.role === "teacher")
     .map(({ id, name }) => ({ id, name }));
 }
-
-/*
- * Database boundary: replace account lookup and creation with database queries.
- * Passwords should remain hashed by the database/authentication service.
- */

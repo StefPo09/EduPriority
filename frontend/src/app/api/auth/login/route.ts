@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const account = authenticateAccount(body.email.trim(), body.password, body.role);
+  const account = await authenticateAccount(body.email.trim(), body.password, body.role);
   if (!account) {
     return NextResponse.json(
       { error: "Email sau parolă incorectă." },

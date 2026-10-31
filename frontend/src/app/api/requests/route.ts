@@ -3,8 +3,9 @@ import { insertRequest, listRequests } from "@/lib/server-requests";
 import { listTeachers } from "@/lib/server-auth";
 import type { StudentRequest } from "@/lib/requests";
 
-export function GET() {
-  return NextResponse.json(listRequests());
+export async function GET() {
+  const requests = await listRequests();
+  return NextResponse.json(requests);
 }
 
 export async function POST(request: Request) {
@@ -12,14 +13,18 @@ export async function POST(request: Request) {
   if (!input.student?.trim() || !input.deadline || !input.text?.trim()) {
     return NextResponse.json({ error: "Câmpuri obligatorii lipsă." }, { status: 400 });
   }
+
+  const teachers = await listTeachers();
   if (
     !input.teacherId ||
-    !listTeachers().some((teacher) => teacher.id === input.teacherId)
+    !teachers.some((teacher) => teacher.id === input.teacherId)
   ) {
     return NextResponse.json(
       { error: "Selectează un profesor valid." },
       { status: 400 },
     );
   }
-  return NextResponse.json(insertRequest(input), { status: 201 });
+
+  const saved = await insertRequest(input);
+  return NextResponse.json(saved, { status: 201 });
 }

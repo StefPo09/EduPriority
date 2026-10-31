@@ -59,7 +59,7 @@ export default function RequestTable() {
                 {request.type}
               </td>
               <td className="whitespace-nowrap border-b border-border px-4 py-4 text-muted">
-                —
+                {request.estimatedTime || "—"}
               </td>
               <td className="whitespace-nowrap border-b border-border px-4 py-4 text-muted">
                 {request.deadline}

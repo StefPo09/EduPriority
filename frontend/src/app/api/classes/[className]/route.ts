@@ -6,5 +6,6 @@ export async function GET(
   context: { params: Promise<{ className: string }> },
 ) {
   const { className } = await context.params;
-  return NextResponse.json(findClassSummary(decodeURIComponent(className)));
+  const summary = await findClassSummary(decodeURIComponent(className));
+  return NextResponse.json(summary);
 }

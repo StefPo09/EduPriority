@@ -1,11 +1,13 @@
-import PriorityBadge from "@/components/shared/PriorityBadge";
+import PriorityBadge, { type Priority } from "@/components/shared/PriorityBadge";
 import { useParams } from "react-router";
-import { getRequest } from "@/lib/requests";
+import { getRequest, updateRequest } from "@/lib/requests";
 import { useEffect, useState } from "react";
 
 export default function RequestDetailContent() {
   const { id } = useParams();
   const [request, setRequest] = useState<Awaited<ReturnType<typeof getRequest>>>();
+  const [isUpdating, setIsUpdating] = useState(false);
+
   useEffect(() => {
     if (id) void getRequest(id).then(setRequest);
   }, [id]);
@@ -18,11 +20,50 @@ export default function RequestDetailContent() {
     );
   }
 
+  const isResolved = request.status === "resolved";
+
+  async function toggleResolved() {
+    if (!request || isUpdating) return;
+    setIsUpdating(true);
+    try {
+      const nextStatus = isResolved ? "pending" : "resolved";
+      const updated = await updateRequest(request.id, { status: nextStatus });
+      setRequest(updated);
+      window.dispatchEvent(new Event("edupriority:requests-updated"));
+    } finally {
+      setIsUpdating(false);
+    }
+  }
+
+  async function cyclePriority() {
+    if (!request || isUpdating) return;
+    setIsUpdating(true);
+    try {
+      const nextPriority = ((request.priority % 5) + 1) as Priority;
+      const updated = await updateRequest(request.id, { priority: nextPriority });
+      setRequest(updated);
+      window.dispatchEvent(new Event("edupriority:requests-updated"));
+    } finally {
+      setIsUpdating(false);
+    }
+  }
+
   return (
     <>
       <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
         <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
-          <h2 className="mb-5 text-base font-semibold">Cererea elevului</h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-base font-semibold">Cererea elevului</h2>
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                isResolved
+                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                  : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+              }`}
+            >
+              {isResolved ? "Rezolvat" : "În așteptare"}
+            </span>
+          </div>
           <p className="leading-6 text-muted">
             {request.text}
           </p>
@@ -39,8 +80,7 @@ export default function RequestDetailContent() {
             <span>Prioritate: {request.priority} din 5</span>
           </div>
           <p className="leading-6 text-muted">
-            <strong className="text-ink">Rezumat:</strong> cerere trimisă de{" "}
-            {request.student}.
+            <strong className="text-ink">Rezumat:</strong> {request.aiSummary || `cerere trimisă de ${request.student}.`}
           </p>
           {request.teacher && (
             <p className="mt-2 leading-6 text-muted">
@@ -49,16 +89,16 @@ export default function RequestDetailContent() {
           )}
         </section>
         <section className="rounded-xl border border-primary-soft bg-primary-soft p-5 sm:p-6">
-          <h2 className="mb-5 text-base font-semibold">Sugestie</h2>
+          <h2 className="mb-5 text-base font-semibold">Sugestie AI</h2>
           <p className="leading-6 text-muted">
             <strong className="text-ink">Timp estimat:</strong>
             <br />
-            De stabilit
+            {request.estimatedTime || "20 min"}
           </p>
           <p className="leading-6 text-muted">
-            <strong className="text-ink">Acțiune:</strong>
+            <strong className="text-ink">Acțiune recomandată:</strong>
             <br />
-            Verifică cererea și stabilește următorul pas.
+            {request.suggestedAction || "Verifică cererea și stabilește următorul pas."}
           </p>
           <p className="border-t border-border pt-4 leading-6 text-muted">
             Deadline: {request.deadline}
@@ -67,11 +107,21 @@ export default function RequestDetailContent() {
         </section>
       </div>
       <div className="mt-6 flex flex-wrap items-center gap-2.5">
-        <button className="min-h-10 rounded-lg bg-primary px-4 font-semibold text-surface hover:brightness-90">
-          Marchează rezolvat
+        <button
+          className="min-h-10 rounded-lg bg-primary px-4 font-semibold text-surface hover:brightness-90 disabled:opacity-60"
+          disabled={isUpdating}
+          onClick={() => void toggleResolved()}
+          type="button"
+        >
+          {isResolved ? "Redeschide cererea" : "Marchează rezolvat"}
         </button>
-        <button className="min-h-10 rounded-lg border border-border bg-surface px-4 font-semibold text-ink hover:border-primary-soft hover:bg-primary-soft hover:text-primary">
-          Schimbă prioritatea
+        <button
+          className="min-h-10 rounded-lg border border-border bg-surface px-4 font-semibold text-ink hover:border-primary-soft hover:bg-primary-soft hover:text-primary disabled:opacity-60"
+          disabled={isUpdating}
+          onClick={() => void cyclePriority()}
+          type="button"
+        >
+          Schimbă prioritatea ({request.priority} → {(request.priority % 5) + 1})
         </button>
       </div>
     </>

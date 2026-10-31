@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const account = createAccount(
+  const account = await createAccount(
     body.name.trim(),
     body.email.trim(),
     body.password,
