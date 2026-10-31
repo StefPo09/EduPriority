@@ -53,6 +53,9 @@ http://IP-ul-calculatorului:3000
 
 Pe Windows, află adresa IPv4 a calculatorului cu `ipconfig` (adresa adaptorului Wi-Fi/Ethernet, de obicei în intervalul `192.168.x.x`). Pornește backend-ul și frontend-ul în terminale separate, pe calculatorul care găzduiește aplicația. Dacă Windows Firewall solicită permisiunea, permite accesul pe rețeaua privată pentru portul `3000` (frontend) și `8000` (backend). Frontend-ul folosește backend-ul de pe același calculator; pentru altă topologie setează `BACKEND_URL` către adresa backend-ului.
 
+### Instalare ca aplicație (PWA)
+Aplicația poate fi instalată din meniul browserului pe dispozitive compatibile și păstrează interfața de bază disponibilă offline. Instalarea și service worker-ul necesită HTTPS (cu excepția `localhost`); accesul printr-un IP local HTTP poate fi folosit în rețea, dar nu permite instalarea PWA. Datele și operațiile aplicației necesită în continuare o conexiune la backend.
+
 ---
 
 ## 👤 Conturi implicite pentru testare
