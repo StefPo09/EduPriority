@@ -6,6 +6,9 @@ type Account = {
   email: string;
   passwordHash: string;
   role: AccountRole;
+  school?: string;
+  className?: string;
+  subjects?: string[];
 };
 
 export type AccountRole = "teacher" | "student";
@@ -23,13 +26,16 @@ export async function createAccount(
   email: string,
   password: string,
   role: AccountRole,
+  school?: string,
+  subjects: string[] = [],
+  className?: string,
 ) {
   // First attempt to create account in the Python backend
   try {
     const response = await fetch(`${BACKEND_URL}/api/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, role }),
+      body: JSON.stringify({ name, email, password, role, school, subjects, class_name: className }),
     });
     if (response.status === 201) {
       return (await response.json()) as {
@@ -37,6 +43,9 @@ export async function createAccount(
         name: string;
         email: string;
         role: AccountRole;
+        school?: string;
+        className?: string;
+        subjects?: string[];
       };
     }
     if (response.status === 409) {
@@ -57,6 +66,9 @@ export async function createAccount(
     email: normalizedEmail,
     passwordHash: hashPassword(password),
     role,
+    school,
+    className,
+    subjects,
   };
 
   accounts.push(account);
@@ -65,6 +77,9 @@ export async function createAccount(
     name: account.name,
     email: account.email,
     role: account.role,
+    school: account.school,
+    className: account.className,
+    subjects: account.subjects,
   };
 }
 
@@ -86,8 +101,12 @@ export async function authenticateAccount(
         name: string;
         email: string;
         role: AccountRole;
+        school?: string;
+        className?: string;
+        subjects?: string[];
       };
     }
+
   } catch {
     // Backend offline, fallback to in-memory store
   }
@@ -110,6 +129,40 @@ export async function authenticateAccount(
     name: account.name,
     email: account.email,
     role: account.role,
+    school: account.school,
+    className: account.className,
+    subjects: account.subjects,
+  };
+}
+
+export async function updateAccount(
+  id: string,
+  school: string | undefined,
+  subjects: string[],
+  className?: string,
+) {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/auth/profile`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, school, subjects, class_name: className }),
+    });
+    if (response.ok) return await response.json();
+  } catch {
+    // Backend offline, fallback to in-memory store
+  }
+  const account = accounts.find((item) => item.id === id);
+  if (!account) return undefined;
+  account.school = school;
+  account.className = className ?? account.className;
+  account.subjects = subjects;
+  return {
+    id: account.id,
+    name: account.name,
+    email: account.email,
+    role: account.role,
+    school: account.school,
+    subjects: account.subjects,
   };
 }
 

@@ -1,25 +1,56 @@
-from typing import List
+import json
+from typing import List, Optional
 from urllib.parse import unquote
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.school_class import SchoolClass, CurriculumItem
 from app.models.request import StudentRequest
+from app.models.user import User
 from app.schemas.class_schedule import ClassSummaryOut, TopicCount
 
 router = APIRouter(prefix="/classes", tags=["Classes"])
 
 @router.get("", response_model=List[str])
-def list_classes(db: Session = Depends(get_db)):
-    classes = db.query(SchoolClass).order_by(SchoolClass.name.asc()).all()
-    if not classes:
+def list_classes(
+    teacher_id: Optional[str] = Query(None, alias="teacherId"),
+    db: Session = Depends(get_db),
+):
+    classes = db.query(SchoolClass).all()
+    if teacher_id:
+        classes = [
+            school_class
+            for school_class in classes
+            if teacher_id in json.loads(school_class.teacher_ids_json or "[]")
+        ]
+    teacher_names = {
+        teacher.id: teacher.name
+        for teacher in db.query(User).filter(User.role == "teacher").all()
+    }
+    classes.sort(
+        key=lambda school_class: (
+            teacher_names.get(
+                (json.loads(school_class.teacher_ids_json or "[]") or [""])[0], ""
+            ),
+            school_class.name,
+        )
+    )
+    if not classes and not teacher_id:
         return ["Clasa a 11-a A", "Clasa a 11-a B", "Clasa a 12-a A", "Clasa a 12-a B"]
     return [c.name for c in classes]
 
 @router.get("/{class_name}", response_model=ClassSummaryOut)
-def get_class_summary(class_name: str, db: Session = Depends(get_db)):
+def get_class_summary(
+    class_name: str,
+    teacher_id: Optional[str] = Query(None, alias="teacherId"),
+    db: Session = Depends(get_db),
+):
     decoded_name = unquote(class_name)
 
+    teacher_subjects = None
+    if teacher_id:
+        teacher = db.query(User).filter(User.id == teacher_id).first()
+        teacher_subjects = set(teacher.subjects if teacher else [])
     requests = db.query(StudentRequest).all()
     total_requests = len(requests)
     resolved_count = sum(1 for r in requests if r.status == "resolved")
@@ -28,14 +59,18 @@ def get_class_summary(class_name: str, db: Session = Depends(get_db)):
     # Collect subject/topic frequencies
     topic_counts = {}
     for r in requests:
+        if teacher_subjects is not None and r.subject not in teacher_subjects:
+            continue
         topic_counts[r.subject] = topic_counts.get(r.subject, 0) + 1
 
     # Also include curriculum topics for richer overview
     curriculum = db.query(CurriculumItem).filter(CurriculumItem.class_name == decoded_name).all()
     for item in curriculum:
+        if teacher_subjects is not None and item.subject not in teacher_subjects:
+            continue
         topic_counts[item.title] = topic_counts.get(item.title, 0) + 3
 
-    if not topic_counts:
+    if not topic_counts and teacher_subjects is None:
         topic_counts = {
             "Derivate și asimptote": 12,
             "Recursivitate și grafuri C++": 9,

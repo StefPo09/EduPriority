@@ -15,10 +15,12 @@ class ClassSummaryOut(BaseModel):
 class ScheduleSlotOut(BaseModel):
     time: str
     subjects: List[str]
+    taughtSubjects: List[bool] = []
 
 class CurriculumItemOut(BaseModel):
     title: str
     status: str
+    subject: str
 
 class ScheduleOut(BaseModel):
     className: str

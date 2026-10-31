@@ -1,6 +1,10 @@
 import PriorityBadge, { type Priority } from "@/components/shared/PriorityBadge";
 import { useParams } from "react-router";
-import { getRequest, updateRequest } from "@/lib/requests";
+import {
+  belongsToCurrentAccount,
+  getRequest,
+  updateRequest,
+} from "@/lib/requests";
 import { useEffect, useState } from "react";
 
 export default function RequestDetailContent() {
@@ -9,7 +13,11 @@ export default function RequestDetailContent() {
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
-    if (id) void getRequest(id).then(setRequest);
+    if (id) {
+      void getRequest(id).then((result) => {
+        setRequest(result && belongsToCurrentAccount(result) ? result : undefined);
+      });
+    }
   }, [id]);
 
   if (!request) {

@@ -3,8 +3,12 @@ import { insertRequest, listRequests } from "@/lib/server-requests";
 import { listTeachers } from "@/lib/server-auth";
 import type { StudentRequest } from "@/lib/requests";
 
-export async function GET() {
-  const requests = await listRequests();
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const requests = await listRequests({
+    teacherId: searchParams.get("teacherId") ?? undefined,
+    student: searchParams.get("student") ?? undefined,
+  });
   return NextResponse.json(requests);
 }
 

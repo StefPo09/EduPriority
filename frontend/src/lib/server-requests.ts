@@ -8,6 +8,7 @@ export type Material = {
   type: string;
   size: string;
   icon: string;
+  teacherId?: string;
 };
 
 export type ClassSummary = {
@@ -20,8 +21,8 @@ export type ClassSummary = {
 
 export type Schedule = {
   className: string;
-  slots: Array<{ time: string; subjects: string[] }>;
-  curriculum: Array<{ title: string; status: string }>;
+  slots: Array<{ time: string; subjects: string[]; taughtSubjects?: boolean[] }>;
+  curriculum: Array<{ title: string; status: string; subject: string }>;
 };
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://127.0.0.1:8000";
@@ -34,9 +35,19 @@ const schedules: Schedule[] = [];
  * Connected to Python FastAPI backend at BACKEND_URL.
  * Includes graceful fallback if backend is offline.
  */
-export async function listRequests(): Promise<StudentRequest[]> {
+export async function listRequests(filters?: {
+  teacherId?: string;
+  student?: string;
+}): Promise<StudentRequest[]> {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/requests`, { cache: "no-store" });
+    const params = new URLSearchParams();
+    if (filters?.teacherId) params.set("teacherId", filters.teacherId);
+    if (filters?.student) params.set("student", filters.student);
+    const query = params.toString();
+    const response = await fetch(
+      `${BACKEND_URL}/api/requests${query ? `?${query}` : ""}`,
+      { cache: "no-store" },
+    );
     if (response.ok) {
       return await response.json();
     }
@@ -44,7 +55,16 @@ export async function listRequests(): Promise<StudentRequest[]> {
     // Backend offline, fallback
   }
 
-  return [...requests].sort(
+  return requests
+    .filter((request) => {
+      if (filters?.teacherId && request.teacherId !== filters.teacherId) {
+        return false;
+      }
+      return !(filters?.student &&
+        !request.student.toLowerCase().includes(filters.student.toLowerCase()));
+
+    })
+    .sort(
     (first, second) => second.priority - first.priority,
   );
 }
@@ -112,9 +132,10 @@ export async function updateRequest(
   return req;
 }
 
-export async function listMaterials(): Promise<Material[]> {
+export async function listMaterials(teacherId?: string): Promise<Material[]> {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/materials`, { cache: "no-store" });
+    const query = teacherId ? `?teacherId=${encodeURIComponent(teacherId)}` : "";
+    const response = await fetch(`${BACKEND_URL}/api/materials${query}`, { cache: "no-store" });
     if (response.ok) {
       return await response.json();
     }
@@ -122,13 +143,16 @@ export async function listMaterials(): Promise<Material[]> {
     // Backend offline, fallback
   }
 
-  return materials;
+  return teacherId
+    ? materials.filter((material) => material.teacherId === teacherId)
+    : materials;
 }
 
 export async function insertMaterial(file: {
   name: string;
   size: number;
   type: string;
+  teacherId?: string;
 }): Promise<Material> {
   const material: Material = {
     id: crypto.randomUUID(),
@@ -138,14 +162,19 @@ export async function insertMaterial(file: {
     type: file.type || "Fișier",
     size: `${Math.max(1, Math.round(file.size / 1024))} KB`,
     icon: "📄",
+    teacherId: file.teacherId,
   };
   materials.unshift(material);
   return material;
 }
 
-export async function findClassSummary(className: string): Promise<ClassSummary> {
+export async function findClassSummary(
+  className: string,
+  teacherId?: string,
+): Promise<ClassSummary> {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/classes/${encodeURIComponent(className)}`, { cache: "no-store" });
+    const query = teacherId ? `?teacherId=${encodeURIComponent(teacherId)}` : "";
+    const response = await fetch(`${BACKEND_URL}/api/classes/${encodeURIComponent(className)}${query}`, { cache: "no-store" });
     if (response.ok) {
       return await response.json();
     }
@@ -164,9 +193,10 @@ export async function findClassSummary(className: string): Promise<ClassSummary>
   );
 }
 
-export async function listClasses(): Promise<string[]> {
+export async function listClasses(teacherId?: string): Promise<string[]> {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/classes`, { cache: "no-store" });
+    const query = teacherId ? `?teacherId=${encodeURIComponent(teacherId)}` : "";
+    const response = await fetch(`${BACKEND_URL}/api/classes${query}`, { cache: "no-store" });
     if (response.ok) {
       return await response.json();
     }
@@ -177,9 +207,10 @@ export async function listClasses(): Promise<string[]> {
   return classSummaries.map((summary) => summary.className);
 }
 
-export async function findSchedule(className: string): Promise<Schedule> {
+export async function findSchedule(className: string, teacherId?: string): Promise<Schedule> {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/schedules/${encodeURIComponent(className)}`, { cache: "no-store" });
+    const query = teacherId ? `?teacherId=${encodeURIComponent(teacherId)}` : "";
+    const response = await fetch(`${BACKEND_URL}/api/schedules/${encodeURIComponent(className)}${query}`, { cache: "no-store" });
     if (response.ok) {
       return await response.json();
     }
@@ -220,8 +251,8 @@ export async function getOverview() {
   return {
     urgent: {
       critical: todayRequests.filter((request) => request.priority === 5).length,
-      medium: todayRequests.filter((request) => request.priority === 3).length,
-      low: todayRequests.filter((request) => request.priority <= 2).length,
+      medium: todayRequests.filter((request) => request.priority >= 2 && request.priority <= 4).length,
+      low: todayRequests.filter((request) => request.priority <= 1).length,
     },
     week: {
       received: currentWeek.length,

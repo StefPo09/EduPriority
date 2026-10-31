@@ -1,8 +1,11 @@
+import json
+import random
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
-from app.schemas.auth import UserSignup, UserLogin, UserOut
+from app.models.school_class import SchoolClass, ScheduleSlot
+from app.schemas.auth import UserSignup, UserLogin, UserOut, UserProfileUpdate
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -21,7 +24,6 @@ def signup(data: UserSignup, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Parola trebuie să aibă cel puțin 8 caractere.",
         )
-
     existing = db.query(User).filter(User.email == email).first()
     if existing:
         raise HTTPException(
@@ -29,15 +31,58 @@ def signup(data: UserSignup, db: Session = Depends(get_db)):
             detail="Există deja un cont cu acest email.",
         )
 
+    student_class = None
+    if data.role == "student":
+        available_classes = db.query(SchoolClass).order_by(SchoolClass.name).all()
+        if available_classes:
+            requested_class = data.class_name.strip() if data.class_name else ""
+            if requested_class:
+                matching_class = next(
+                    (
+                        school_class
+                        for school_class in available_classes
+                        if school_class.name.casefold() == requested_class.casefold()
+                    ),
+                    None,
+                )
+                if not matching_class:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Clasa introdusă nu există.",
+                    )
+                student_class = matching_class.name
+            else:
+                student_class = random.choice(available_classes).name
+
     user = User(
         name=name,
         email=email,
         role=data.role,
+        school=data.school.strip() if data.school else None,
+        class_name=student_class,
+        subjects_json=json.dumps(
+            [subject.strip() for subject in data.subjects if subject.strip()]
+        ),
     )
     user.set_password(data.password)
     db.add(user)
     db.commit()
     db.refresh(user)
+    if user.role == "teacher":
+        taught_subjects = set(json.loads(user.subjects_json or "[]"))
+        for school_class in db.query(SchoolClass).all():
+            class_subjects = {
+                subject
+                for slot in db.query(ScheduleSlot)
+                .filter(ScheduleSlot.class_name == school_class.name)
+                .all()
+                for subject in json.loads(slot.subjects_json or "[]")
+            }
+            assigned_teachers = json.loads(school_class.teacher_ids_json or "[]")
+            if taught_subjects.intersection(class_subjects) and user.id not in assigned_teachers:
+                assigned_teachers.append(user.id)
+                school_class.teacher_ids_json = json.dumps(assigned_teachers)
+        db.commit()
     return user
 
 @router.post("/login", response_model=UserOut)
@@ -62,4 +107,30 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
             detail=f"Acest cont nu este înregistrat ca {data.role}.",
         )
 
+    return user
+
+@router.patch("/profile", response_model=UserOut)
+def update_profile(data: UserProfileUpdate, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == data.id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Contul nu a fost găsit.")
+    if user.role == "teacher":
+        user.school = data.school.strip() if data.school else user.school
+        user.subjects_json = json.dumps(
+            sorted({subject.strip() for subject in data.subjects if subject.strip()})
+        )
+    elif data.class_name:
+        selected_class = (
+            db.query(SchoolClass)
+            .filter(SchoolClass.name == data.class_name.strip())
+            .first()
+        )
+        if not selected_class:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Clasa selectată nu există.",
+            )
+        user.class_name = selected_class.name
+    db.commit()
+    db.refresh(user)
     return user

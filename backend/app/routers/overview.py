@@ -19,8 +19,8 @@ def get_overview(db: Session = Depends(get_db)):
     # Requests due today
     today_requests = [r for r in all_requests if r.deadline == today_str]
     critical_count = sum(1 for r in today_requests if r.priority == 5)
-    medium_count = sum(1 for r in today_requests if r.priority == 3)
-    low_count = sum(1 for r in today_requests if r.priority <= 2)
+    medium_count = sum(1 for r in today_requests if 2 <= r.priority <= 4)
+    low_count = sum(1 for r in today_requests if r.priority <= 1)
 
     # Weekly statistics (last 7 days vs previous 7 days)
     current_week_reqs = [r for r in all_requests if r.created_at >= seven_days_ago]

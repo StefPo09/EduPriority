@@ -1,4 +1,5 @@
 import json
+import random
 import uuid
 from datetime import date, timedelta, datetime, timezone
 from sqlalchemy.orm import Session
@@ -18,6 +19,7 @@ def seed_database(db: Session):
             "password_hash": hash_password("Profesor123!"),
             "role": "teacher",
             "school": "Liceul Teoretic Mihai Eminescu",
+            "subjects_json": json.dumps(["Matematică", "Fizică"]),
         },
         {
             "id": str(uuid.uuid4()),
@@ -26,6 +28,7 @@ def seed_database(db: Session):
             "password_hash": hash_password("Profesor123!"),
             "role": "teacher",
             "school": "Liceul Teoretic Mihai Eminescu",
+            "subjects_json": json.dumps(["Informatică", "Matematică"]),
         },
         {
             "id": str(uuid.uuid4()),
@@ -34,6 +37,7 @@ def seed_database(db: Session):
             "password_hash": hash_password("Profesor123!"),
             "role": "teacher",
             "school": "Liceul Teoretic Mihai Eminescu",
+            "subjects_json": json.dumps(["Limba Română", "Istorie"]),
         },
         {
             "id": str(uuid.uuid4()),
@@ -66,6 +70,16 @@ def seed_database(db: Session):
         if payload["email"] not in existing_emails:
             db.add(User(**payload))
     db.flush()
+    seeded_subjects = {
+        "prof.popescu@edupriority.ro": ["Matematică", "Fizică"],
+        "prof.ionescu@edupriority.ro": ["Informatică", "Matematică"],
+        "prof.dumitrescu@edupriority.ro": ["Limba Română", "Istorie"],
+    }
+    for email, subjects in seeded_subjects.items():
+        teacher = db.query(User).filter(User.email == email).first()
+        if teacher and not teacher.subjects:
+            teacher.subjects_json = json.dumps(subjects)
+    db.flush()
 
     if db.query(SchoolClass).count() == 0:
         classes = [
@@ -75,8 +89,29 @@ def seed_database(db: Session):
             "Clasa a 12-a B",
             "Clasa a 10-a C",
         ]
-        for c_name in classes:
-            db.add(SchoolClass(name=c_name))
+        teachers = db.query(User).filter(User.role == "teacher").order_by(User.email).all()
+        for index, c_name in enumerate(classes):
+            assigned = [teachers[index % len(teachers)].id] if teachers else []
+            db.add(
+                SchoolClass(
+                    name=c_name,
+                    teacher_ids_json=json.dumps(assigned),
+                )
+            )
+    else:
+        teachers = db.query(User).filter(User.role == "teacher").order_by(User.email).all()
+        for index, school_class in enumerate(
+            db.query(SchoolClass).order_by(SchoolClass.name).all()
+        ):
+            if not json.loads(school_class.teacher_ids_json or "[]") and teachers:
+                school_class.teacher_ids_json = json.dumps(
+                    [teachers[index % len(teachers)].id]
+                )
+
+    available_classes = db.query(SchoolClass).order_by(SchoolClass.name).all()
+    for student in db.query(User).filter(User.role == "student").all():
+        if not student.class_name and available_classes:
+            student.class_name = random.choice(available_classes).name
 
     if db.query(ScheduleSlot).count() == 0:
         slots_11a = [
@@ -108,16 +143,42 @@ def seed_database(db: Session):
             ("Romanul realist-obiectiv în literatura română", "Finalizat"),
             ("Legile lui Kirchhoff și circuite de curent continuu", "Planificat"),
         ]
-        for title, status in curriculum_11a:
-            db.add(CurriculumItem(class_name="Clasa a 11-a A", title=title, status=status))
+        for title, status, subject in [
+            (*item, subject)
+            for item, subject in zip(
+                curriculum_11a,
+                ["Matematică", "Informatică", "Fizică", "Limba Română", "Fizică"],
+            )
+        ]:
+            db.add(CurriculumItem(class_name="Clasa a 11-a A", title=title, status=status, subject=subject))
 
         curriculum_12a = [
             ("Integrale definite și calcul de arii/volume", "În desfășurare"),
             ("Pregătire Bacalaureat - Subiectul al III-lea Română", "În desfășurare"),
             ("Structuri arborescente și algoritmi genetici", "Finalizat"),
         ]
-        for title, status in curriculum_12a:
-            db.add(CurriculumItem(class_name="Clasa a 12-a A", title=title, status=status))
+        for title, status, subject in [
+            (*item, subject)
+            for item, subject in zip(
+                curriculum_12a,
+                ["Matematică", "Limba Română", "Informatică"],
+            )
+        ]:
+            db.add(CurriculumItem(class_name="Clasa a 12-a A", title=title, status=status, subject=subject))
+    else:
+        subject_by_title = {
+            "Derivate de ordin superior și aplicații geometrice": "Matematică",
+            "Programare dinamică și algoritmi de grafuri": "Informatică",
+            "Termodinamică: transformări ale gazului ideal": "Fizică",
+            "Romanul realist-obiectiv în literatura română": "Limba Română",
+            "Legile lui Kirchhoff și circuite de curent continuu": "Fizică",
+            "Integrale definite și calcul de arii/volume": "Matematică",
+            "Pregătire Bacalaureat - Subiectul al III-lea Română": "Limba Română",
+            "Structuri arborescente și algoritmi genetici": "Informatică",
+        }
+        for item in db.query(CurriculumItem).all():
+            if item.subject == "Nespecificată" and item.title in subject_by_title:
+                item.subject = subject_by_title[item.title]
 
     if db.query(StudentRequest).count() == 0:
         today = date.today()
@@ -207,6 +268,9 @@ def seed_database(db: Session):
             ))
 
     if db.query(Material).count() == 0:
+        teacher_popescu = db.query(User).filter(User.email == "prof.popescu@edupriority.ro").first()
+        teacher_ionescu = db.query(User).filter(User.email == "prof.ionescu@edupriority.ro").first()
+        teacher_dumitrescu = db.query(User).filter(User.email == "prof.dumitrescu@edupriority.ro").first()
         db.add_all([
             Material(
                 id=str(uuid.uuid4()),
@@ -216,6 +280,7 @@ def seed_database(db: Session):
                 type="PDF",
                 size="340 KB",
                 icon="📄",
+                teacher_id=teacher_popescu.id if teacher_popescu else None,
             ),
             Material(
                 id=str(uuid.uuid4()),
@@ -225,6 +290,7 @@ def seed_database(db: Session):
                 type="C++",
                 size="45 KB",
                 icon="💻",
+                teacher_id=teacher_ionescu.id if teacher_ionescu else None,
             ),
             Material(
                 id=str(uuid.uuid4()),
@@ -234,6 +300,7 @@ def seed_database(db: Session):
                 type="PDF",
                 size="1.2 MB",
                 icon="📚",
+                teacher_id=teacher_dumitrescu.id if teacher_dumitrescu else None,
             ),
             Material(
                 id=str(uuid.uuid4()),
@@ -243,7 +310,23 @@ def seed_database(db: Session):
                 type="PDF",
                 size="520 KB",
                 icon="⚡",
+                teacher_id=teacher_popescu.id if teacher_popescu else None,
             ),
         ])
+    else:
+        teacher_by_subject = {
+            "Matematică": "prof.popescu@edupriority.ro",
+            "Fizică": "prof.popescu@edupriority.ro",
+            "Informatică": "prof.ionescu@edupriority.ro",
+            "Limba Română": "prof.dumitrescu@edupriority.ro",
+        }
+        teachers = {
+            teacher.email: teacher.id
+            for teacher in db.query(User).filter(User.role == "teacher").all()
+        }
+        for material in db.query(Material).filter(Material.teacher_id.is_(None)).all():
+            teacher_email = teacher_by_subject.get(material.subject)
+            if teacher_email in teachers:
+                material.teacher_id = teachers[teacher_email]
 
     db.commit()

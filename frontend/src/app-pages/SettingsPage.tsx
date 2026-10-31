@@ -1,9 +1,9 @@
 "use client";
 
 import PageHeader from "../components/settings/PageHeader";
-import { useTheme } from "@/components/shared/ThemeContext";
-import { useNavigate } from "react-router";
-import { useState } from "react";
+import {useTheme} from "@/components/shared/ThemeContext";
+import {useNavigate} from "react-router";
+import {useState} from "react";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
@@ -16,6 +16,7 @@ export default function SettingsPage() {
     if (!stored) return undefined;
     try {
       return JSON.parse(stored) as {
+        id: string;
         name: string;
         email: string;
         role: "teacher" | "student";
@@ -24,7 +25,6 @@ export default function SettingsPage() {
       return undefined;
     }
   });
-
   return (
     <div className="w-full">
       <PageHeader />
@@ -44,13 +44,6 @@ export default function SettingsPage() {
               <input
                 className="rounded-lg border border-border px-3 py-2.5 font-normal"
                 defaultValue={account?.email ?? ""}
-              />
-            </label>
-            <label className="grid gap-2 text-sm font-semibold sm:col-span-2">
-              Scoala
-              <input
-                className="rounded-lg border border-border px-3 py-2.5 font-normal"
-                defaultValue="Liceul Teoretic Mihai Eminescu"
               />
             </label>
           </div>

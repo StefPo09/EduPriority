@@ -1,3 +1,4 @@
+import json
 import uuid
 import secrets
 import hashlib
@@ -44,6 +45,8 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     role = Column(String(20), nullable=False)  # "teacher" | "student"
     school = Column(String(180), default="Liceul Teoretic Mihai Eminescu")
+    class_name = Column(String(100), nullable=True)
+    subjects_json = Column(String(1000), default="[]", nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     def set_password(self, password: str):
@@ -51,3 +54,10 @@ class User(Base):
 
     def check_password(self, password: str) -> bool:
         return verify_password(password, self.password_hash)
+
+    @property
+    def subjects(self) -> list[str]:
+        try:
+            return json.loads(self.subjects_json or "[]")
+        except (TypeError, ValueError):
+            return []
