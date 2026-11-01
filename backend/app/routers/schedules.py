@@ -4,6 +4,7 @@ from urllib.parse import unquote
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
+from app.auth import get_current_user
 from app.models.school_class import SchoolClass, ScheduleSlot, CurriculumItem
 from app.models.user import User
 from app.schemas.class_schedule import ScheduleOut, ScheduleSlotOut, CurriculumItemOut
@@ -30,8 +31,19 @@ def get_schedule(
     class_name: str,
     teacher_id: str | None = Query(None, alias="teacherId"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     decoded_name = unquote(class_name)
+    if current_user.role == "student":
+        if decoded_name != current_user.class_name:
+            from fastapi import HTTPException, status
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Nu ai permisiunea necesară.")
+        teacher_id = None
+    elif teacher_id and teacher_id != current_user.id:
+        from fastapi import HTTPException, status
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Nu poți accesa programul altui profesor.")
+    else:
+        teacher_id = current_user.id
     if teacher_id:
         school_class = (
             db.query(SchoolClass)

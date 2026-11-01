@@ -3,9 +3,10 @@ import random
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
+from app.auth import create_access_token, get_current_user
 from app.models.user import User
 from app.models.school_class import SchoolClass, ScheduleSlot
-from app.schemas.auth import UserSignup, UserLogin, UserOut, UserProfileUpdate
+from app.schemas.auth import UserSignup, UserLogin, UserOut, UserProfileUpdate, LoginResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -85,7 +86,7 @@ def signup(data: UserSignup, db: Session = Depends(get_db)):
         db.commit()
     return user
 
-@router.post("/login", response_model=UserOut)
+@router.post("/login", response_model=LoginResponse)
 def login(data: UserLogin, db: Session = Depends(get_db)):
     email = data.email.strip().lower()
     if not email or not data.password:
@@ -107,13 +108,17 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
             detail=f"Acest cont nu este înregistrat ca {data.role}.",
         )
 
-    return user
+    return {**UserOut.model_validate(user).model_dump(), "access_token": create_access_token(user)}
 
 @router.patch("/profile", response_model=UserOut)
-def update_profile(data: UserProfileUpdate, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == data.id).first()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Contul nu a fost găsit.")
+def update_profile(
+    data: UserProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if data.id and data.id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Poți modifica doar propriul cont.")
+    user = current_user
     if user.role == "teacher":
         user.school = data.school.strip() if data.school else user.school
         user.subjects_json = json.dumps(

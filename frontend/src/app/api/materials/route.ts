@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { insertMaterial, listMaterials } from "@/lib/server-requests";
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://127.0.0.1:8000";
@@ -25,8 +26,10 @@ export async function POST(request: Request) {
     const backendFormData = new FormData();
     backendFormData.append("file", file);
     if (typeof teacherId === "string") backendFormData.append("teacher_id", teacherId);
+    const token = (await cookies()).get("edupriority_access_token")?.value;
     const backendRes = await fetch(`${BACKEND_URL}/api/materials`, {
       method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       body: backendFormData,
     });
     if (backendRes.ok) {

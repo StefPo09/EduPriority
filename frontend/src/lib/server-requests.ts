@@ -1,4 +1,5 @@
 import type { StudentRequest } from "./requests";
+import { cookies } from "next/headers";
 
 export type Material = {
   id: string;
@@ -31,6 +32,11 @@ const materials: Material[] = [];
 const classSummaries: ClassSummary[] = [];
 const schedules: Schedule[] = [];
 
+async function authHeaders(): Promise<Record<string, string>> {
+  const token = (await cookies()).get("edupriority_access_token")?.value;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 /*
  * Connected to Python FastAPI backend at BACKEND_URL.
  * Includes graceful fallback if backend is offline.
@@ -46,7 +52,7 @@ export async function listRequests(filters?: {
     const query = params.toString();
     const response = await fetch(
       `${BACKEND_URL}/api/requests${query ? `?${query}` : ""}`,
-      { cache: "no-store" },
+      { cache: "no-store", headers: await authHeaders() },
     );
     if (response.ok) {
       return await response.json();
@@ -71,7 +77,7 @@ export async function listRequests(filters?: {
 
 export async function findRequest(id: string): Promise<StudentRequest | undefined> {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/requests/${id}`, { cache: "no-store" });
+    const response = await fetch(`${BACKEND_URL}/api/requests/${id}`, { cache: "no-store", headers: await authHeaders() });
     if (response.ok) {
       return await response.json();
     }
@@ -89,7 +95,7 @@ export async function insertRequest(
   try {
     const response = await fetch(`${BACKEND_URL}/api/requests`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify(input),
     });
     if (response.ok) {
@@ -115,7 +121,7 @@ export async function updateRequest(
   try {
     const response = await fetch(`${BACKEND_URL}/api/requests/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify(updates),
     });
     if (response.ok) {
@@ -135,7 +141,7 @@ export async function updateRequest(
 export async function listMaterials(teacherId?: string): Promise<Material[]> {
   try {
     const query = teacherId ? `?teacherId=${encodeURIComponent(teacherId)}` : "";
-    const response = await fetch(`${BACKEND_URL}/api/materials${query}`, { cache: "no-store" });
+    const response = await fetch(`${BACKEND_URL}/api/materials${query}`, { cache: "no-store", headers: await authHeaders() });
     if (response.ok) {
       return await response.json();
     }
@@ -174,7 +180,7 @@ export async function findClassSummary(
 ): Promise<ClassSummary> {
   try {
     const query = teacherId ? `?teacherId=${encodeURIComponent(teacherId)}` : "";
-    const response = await fetch(`${BACKEND_URL}/api/classes/${encodeURIComponent(className)}${query}`, { cache: "no-store" });
+    const response = await fetch(`${BACKEND_URL}/api/classes/${encodeURIComponent(className)}${query}`, { cache: "no-store", headers: await authHeaders() });
     if (response.ok) {
       return await response.json();
     }
@@ -196,7 +202,7 @@ export async function findClassSummary(
 export async function listClasses(teacherId?: string): Promise<string[]> {
   try {
     const query = teacherId ? `?teacherId=${encodeURIComponent(teacherId)}` : "";
-    const response = await fetch(`${BACKEND_URL}/api/classes${query}`, { cache: "no-store" });
+    const response = await fetch(`${BACKEND_URL}/api/classes${query}`, { cache: "no-store", headers: await authHeaders() });
     if (response.ok) {
       return await response.json();
     }
@@ -210,7 +216,7 @@ export async function listClasses(teacherId?: string): Promise<string[]> {
 export async function findSchedule(className: string, teacherId?: string): Promise<Schedule> {
   try {
     const query = teacherId ? `?teacherId=${encodeURIComponent(teacherId)}` : "";
-    const response = await fetch(`${BACKEND_URL}/api/schedules/${encodeURIComponent(className)}${query}`, { cache: "no-store" });
+    const response = await fetch(`${BACKEND_URL}/api/schedules/${encodeURIComponent(className)}${query}`, { cache: "no-store", headers: await authHeaders() });
     if (response.ok) {
       return await response.json();
     }
@@ -229,7 +235,7 @@ export async function findSchedule(className: string, teacherId?: string): Promi
 
 export async function getOverview() {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/overview`, { cache: "no-store" });
+    const response = await fetch(`${BACKEND_URL}/api/overview`, { cache: "no-store", headers: await authHeaders() });
     if (response.ok) {
       return await response.json();
     }

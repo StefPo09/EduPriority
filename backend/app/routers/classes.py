@@ -4,6 +4,7 @@ from urllib.parse import unquote
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
+from app.auth import get_current_user
 from app.models.school_class import SchoolClass, CurriculumItem
 from app.models.request import StudentRequest
 from app.models.user import User
@@ -15,7 +16,14 @@ router = APIRouter(prefix="/classes", tags=["Classes"])
 def list_classes(
     teacher_id: Optional[str] = Query(None, alias="teacherId"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+    if current_user.role == "student":
+        return [current_user.class_name] if current_user.class_name else []
+    if teacher_id and teacher_id != current_user.id:
+        from fastapi import HTTPException, status
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Nu poți accesa clasele altui profesor.")
+    teacher_id = current_user.id
     classes = db.query(SchoolClass).all()
     if teacher_id:
         classes = [
@@ -44,8 +52,16 @@ def get_class_summary(
     class_name: str,
     teacher_id: Optional[str] = Query(None, alias="teacherId"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     decoded_name = unquote(class_name)
+    if current_user.role == "student" and decoded_name != current_user.class_name:
+        from fastapi import HTTPException, status
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Nu ai permisiunea necesară.")
+    if current_user.role == "teacher" and teacher_id and teacher_id != current_user.id:
+        from fastapi import HTTPException, status
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Nu poți accesa clasa altui profesor.")
+    teacher_id = current_user.id if current_user.role == "teacher" else None
 
     teacher_subjects = None
     if teacher_id:

@@ -2,19 +2,21 @@ from datetime import date, timedelta, datetime, timezone
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.database import get_db
+from app.auth import require_role
+from app.models.user import User
 from app.models.request import StudentRequest
 from app.schemas.overview import OverviewOut, UrgentOverview, WeekOverview
 
 router = APIRouter(prefix="/overview", tags=["Overview"])
 
 @router.get("", response_model=OverviewOut)
-def get_overview(db: Session = Depends(get_db)):
+def get_overview(db: Session = Depends(get_db), _: User = Depends(require_role("teacher"))):
     today_str = date.today().strftime("%Y-%m-%d")
     now = datetime.now(timezone.utc)
     seven_days_ago = (now - timedelta(days=7)).isoformat()
     fourteen_days_ago = (now - timedelta(days=14)).isoformat()
 
-    all_requests = db.query(StudentRequest).all()
+    all_requests = db.query(StudentRequest).filter(StudentRequest.teacher_id == _.id).all()
 
     # Requests due today
     today_requests = [r for r in all_requests if r.deadline == today_str]

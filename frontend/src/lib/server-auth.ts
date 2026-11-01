@@ -1,4 +1,5 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { cookies } from "next/headers";
 
 type Account = {
   id: string;
@@ -9,12 +10,18 @@ type Account = {
   school?: string;
   className?: string;
   subjects?: string[];
+  accessToken?: string;
 };
 
 export type AccountRole = "teacher" | "student";
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://127.0.0.1:8000";
 const accounts: Account[] = [];
+
+async function authHeaders(): Promise<Record<string, string>> {
+  const token = (await cookies()).get("edupriority_access_token")?.value;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -34,11 +41,11 @@ export async function createAccount(
   try {
     const response = await fetch(`${BACKEND_URL}/api/auth/signup`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ name, email, password, role, school, subjects, class_name: className }),
     });
     if (response.status === 201) {
-      return (await response.json()) as {
+      const account = (await response.json()) as {
         id: string;
         name: string;
         email: string;
@@ -46,7 +53,9 @@ export async function createAccount(
         school?: string;
         className?: string;
         subjects?: string[];
+        access_token?: string;
       };
+      return { ...account, accessToken: account.access_token };
     }
     if (response.status === 409) {
       return undefined;
@@ -92,11 +101,11 @@ export async function authenticateAccount(
   try {
     const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ email, password, role }),
     });
     if (response.ok) {
-      return (await response.json()) as {
+      const account = (await response.json()) as {
         id: string;
         name: string;
         email: string;
@@ -104,7 +113,9 @@ export async function authenticateAccount(
         school?: string;
         className?: string;
         subjects?: string[];
+        access_token?: string;
       };
+      return { ...account, accessToken: account.access_token };
     }
 
   } catch {
@@ -144,7 +155,7 @@ export async function updateAccount(
   try {
     const response = await fetch(`${BACKEND_URL}/api/auth/profile`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ id, school, subjects, class_name: className }),
     });
     if (response.ok) return await response.json();
@@ -169,6 +180,7 @@ export async function updateAccount(
 export async function listTeachers() {
   try {
     const response = await fetch(`${BACKEND_URL}/api/teachers`, {
+      headers: await authHeaders(),
       cache: "no-store",
     });
     if (response.ok) {

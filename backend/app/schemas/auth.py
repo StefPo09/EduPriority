@@ -16,7 +16,7 @@ class UserLogin(BaseModel):
     role: Literal["teacher", "student"]
 
 class UserProfileUpdate(BaseModel):
-    id: str
+    id: str | None = None
     school: str | None = None
     class_name: str | None = None
     subjects: List[str] = Field(default_factory=list)
@@ -31,6 +31,10 @@ class UserOut(BaseModel):
     school: str | None = None
     class_name: str | None = None
     subjects: List[str] = Field(default_factory=list)
+
+class LoginResponse(UserOut):
+    access_token: str
+    token_type: str = "bearer"
 
 class TeacherOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
