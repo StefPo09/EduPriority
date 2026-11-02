@@ -23,6 +23,12 @@ async function authHeaders(): Promise<Record<string, string>> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+function rejectBackendFailure(response: Response) {
+  if (process.env.NODE_ENV === "production") {
+    throw Object.assign(new Error(`Backend request failed with status ${response.status}`), { status: response.status });
+  }
+}
+
 function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   return `${salt}:${scryptSync(password, salt, 64).toString("hex")}`;
@@ -60,7 +66,9 @@ export async function createAccount(
     if (response.status === 409) {
       return undefined;
     }
-  } catch {
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback to in-memory store
   }
 
@@ -117,8 +125,10 @@ export async function authenticateAccount(
       };
       return { ...account, accessToken: account.access_token };
     }
-
-  } catch {
+    if (process.env.NODE_ENV === "production" && response.status === 401) return undefined;
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback to in-memory store
   }
 
@@ -159,7 +169,10 @@ export async function updateAccount(
       body: JSON.stringify({ id, school, subjects, class_name: className }),
     });
     if (response.ok) return await response.json();
-  } catch {
+    if (process.env.NODE_ENV === "production" && response.status === 404) return undefined;
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback to in-memory store
   }
   const account = accounts.find((item) => item.id === id);
@@ -186,7 +199,9 @@ export async function listTeachers() {
     if (response.ok) {
       return (await response.json()) as Array<{ id: string; name: string }>;
     }
-  } catch {
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback to in-memory store
   }
 

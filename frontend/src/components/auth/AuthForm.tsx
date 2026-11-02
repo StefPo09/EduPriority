@@ -47,6 +47,10 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
         subjects?: string[];
       };
       if (!response.ok) throw new Error(result.error ?? "A apărut o eroare.");
+      if (mode === "signup") {
+        navigate("/login");
+        return;
+      }
       if (result.id && result.name && result.email && result.role) {
         localStorage.setItem(
           "edupriority:account",

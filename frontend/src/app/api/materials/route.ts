@@ -35,7 +35,17 @@ export async function POST(request: Request) {
     if (backendRes.ok) {
       return NextResponse.json(await backendRes.json(), { status: 201 });
     }
+    if (process.env.NODE_ENV === "production") {
+      const contentType = backendRes.headers.get("content-type");
+      return new Response(backendRes.body, {
+        status: backendRes.status,
+        headers: contentType ? { "Content-Type": contentType } : undefined,
+      });
+    }
   } catch {
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json({ error: "Backend unavailable." }, { status: 502 });
+    }
     // Fallback to local
   }
 

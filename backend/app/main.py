@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.config import CORS_ORIGINS, CORS_ORIGIN_REGEX
+from app.config import CORS_ORIGINS, CORS_ORIGIN_REGEX, SEED_DEMO_DATA
 from app.database import engine, Base, SessionLocal
 from app.services.seed_data import seed_database
 from sqlalchemy import inspect, text
@@ -57,12 +57,13 @@ async def lifespan(app: FastAPI):
             connection.execute(
                 text("ALTER TABLE materials ADD COLUMN teacher_id VARCHAR(36)")
             )
-    # Seed initial data if empty
-    db = SessionLocal()
-    try:
-        seed_database(db)
-    finally:
-        db.close()
+    if SEED_DEMO_DATA:
+        # Seed initial data if empty
+        db = SessionLocal()
+        try:
+            seed_database(db)
+        finally:
+            db.close()
     yield
 
 app = FastAPI(

@@ -10,6 +10,8 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const isDarkMode = theme === "dark";
   const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
   const [account] = useState(() => {
     if (typeof window === "undefined") return undefined;
     const stored = localStorage.getItem("edupriority:account");
@@ -25,6 +27,23 @@ export default function SettingsPage() {
       return undefined;
     }
   });
+
+  async function logout() {
+    if (loggingOut) return;
+    setLogoutError("");
+    setLoggingOut(true);
+    try {
+      const response = await fetch("/api/auth/logout", { method: "POST" });
+      if (!response.ok) throw new Error();
+      localStorage.removeItem("edupriority:account");
+      navigate("/login", { replace: true });
+    } catch {
+      setLogoutError("Deconectarea a eșuat. Te rugăm să încerci din nou.");
+    } finally {
+      setLoggingOut(false);
+    }
+  }
+
   return (
     <div className="w-full">
       <PageHeader />
@@ -134,7 +153,10 @@ export default function SettingsPage() {
             <button
               className="shrink-0 rounded-lg border border-(--color-priority-5)/40 px-4 py-2.5 font-semibold text-(--color-priority-5) transition-colors hover:bg-(--color-priority-5)/10 focus:outline-none focus:ring-4 focus:ring-(--color-priority-5)/15"
               type="button"
-              onClick={() => setShowLogoutConfirmation(true)}
+              onClick={() => {
+                setLogoutError("");
+                setShowLogoutConfirmation(true);
+              }}
             >
               Deconectare
             </button>
@@ -146,7 +168,7 @@ export default function SettingsPage() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6 backdrop-blur-sm"
           role="presentation"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
+            if (!loggingOut && event.target === event.currentTarget) {
               setShowLogoutConfirmation(false);
             }
           }}
@@ -168,10 +190,16 @@ export default function SettingsPage() {
               Vei fi deconectat de pe acest dispozitiv și vei reveni la pagina
               de autentificare.
             </p>
+            {logoutError && (
+              <p className="mt-3 text-sm text-(--color-priority-5)" role="alert">
+                {logoutError}
+              </p>
+            )}
             <div className="mt-7 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button
                 className="rounded-lg border border-border px-4 py-2.5 font-semibold text-ink transition-colors hover:bg-background focus:outline-none focus:ring-4 focus:ring-primary-soft"
                 type="button"
+                disabled={loggingOut}
                 onClick={() => setShowLogoutConfirmation(false)}
               >
                 Anulează
@@ -179,10 +207,8 @@ export default function SettingsPage() {
               <button
                 className="rounded-lg bg-(--color-priority-5) px-4 py-2.5 font-semibold text-white transition-colors hover:brightness-90 focus:outline-none focus:ring-4 focus:ring-(--color-priority-5)/20"
                 type="button"
-                onClick={() => {
-                  localStorage.removeItem("edupriority:account");
-                  navigate("/login", { replace: true });
-                }}
+                disabled={loggingOut}
+                onClick={logout}
               >
                 Da, deconectează-mă
               </button>

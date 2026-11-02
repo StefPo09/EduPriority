@@ -27,7 +27,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const response = NextResponse.json(account);
+  const safeAccount = { ...account } as typeof account & {
+    accessToken?: string;
+    access_token?: string;
+  };
+  delete safeAccount.accessToken;
+  delete safeAccount.access_token;
+  const response = NextResponse.json(safeAccount);
   if ("accessToken" in account && account.accessToken) {
     response.cookies.set("edupriority_access_token", account.accessToken, {
       httpOnly: true,

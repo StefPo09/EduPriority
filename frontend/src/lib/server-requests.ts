@@ -37,9 +37,15 @@ async function authHeaders(): Promise<Record<string, string>> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+function rejectBackendFailure(response: Response) {
+  if (process.env.NODE_ENV === "production") {
+    throw Object.assign(new Error(`Backend request failed with status ${response.status}`), { status: response.status });
+  }
+}
+
 /*
  * Connected to Python FastAPI backend at BACKEND_URL.
- * Includes graceful fallback if backend is offline.
+ * Includes a development fallback if the backend is unavailable.
  */
 export async function listRequests(filters?: {
   teacherId?: string;
@@ -57,7 +63,9 @@ export async function listRequests(filters?: {
     if (response.ok) {
       return await response.json();
     }
-  } catch {
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback
   }
 
@@ -82,7 +90,9 @@ export async function findRequest(id: string): Promise<StudentRequest | undefine
       return await response.json();
     }
     if (response.status === 404) return undefined;
-  } catch {
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback
   }
 
@@ -101,7 +111,9 @@ export async function insertRequest(
     if (response.ok) {
       return await response.json();
     }
-  } catch {
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback
   }
 
@@ -127,7 +139,10 @@ export async function updateRequest(
     if (response.ok) {
       return await response.json();
     }
-  } catch {
+    if (process.env.NODE_ENV === "production" && response.status === 404) return undefined;
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback
   }
 
@@ -145,7 +160,9 @@ export async function listMaterials(teacherId?: string): Promise<Material[]> {
     if (response.ok) {
       return await response.json();
     }
-  } catch {
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback
   }
 
@@ -160,6 +177,9 @@ export async function insertMaterial(file: {
   type: string;
   teacherId?: string;
 }): Promise<Material> {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Local material insertion is unavailable in production");
+  }
   const material: Material = {
     id: crypto.randomUUID(),
     name: file.name,
@@ -184,7 +204,9 @@ export async function findClassSummary(
     if (response.ok) {
       return await response.json();
     }
-  } catch {
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback
   }
 
@@ -206,7 +228,9 @@ export async function listClasses(teacherId?: string): Promise<string[]> {
     if (response.ok) {
       return await response.json();
     }
-  } catch {
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback
   }
 
@@ -220,7 +244,9 @@ export async function findSchedule(className: string, teacherId?: string): Promi
     if (response.ok) {
       return await response.json();
     }
-  } catch {
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback
   }
 
@@ -239,7 +265,9 @@ export async function getOverview() {
     if (response.ok) {
       return await response.json();
     }
-  } catch {
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback
   }
 

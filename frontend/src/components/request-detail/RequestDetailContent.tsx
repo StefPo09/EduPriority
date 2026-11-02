@@ -11,19 +11,18 @@ export default function RequestDetailContent() {
   const { id } = useParams();
   const [request, setRequest] = useState<Awaited<ReturnType<typeof getRequest>>>();
   const [isUpdating, setIsUpdating] = useState(false);
-  const [accountRole, setAccountRole] = useState<"teacher" | "student" | null>(null);
-
-  useEffect(() => {
+  const [accountRole] = useState<"teacher" | "student" | null>(() => {
     try {
+      if (typeof window === "undefined") return null;
       const storedAccount = localStorage.getItem("edupriority:account");
       const account = storedAccount
         ? (JSON.parse(storedAccount) as { role?: "teacher" | "student" })
         : undefined;
-      setAccountRole(account?.role ?? null);
+      return account?.role ?? null;
     } catch {
-      setAccountRole(null);
+      return null;
     }
-  }, []);
+  });
 
   useEffect(() => {
     if (id) {
