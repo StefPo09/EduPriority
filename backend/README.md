@@ -101,9 +101,10 @@ Din folderul `backend`:
 # Activează mai întâi mediul virtual conform pașilor de mai sus.
 python run.py
 # Alternativ, cu uvicorn:
-uvicorn app.main:app --host 0.0.0.0 --reload --port 8000
+uvicorn app.main:app --host 0.0.0.0 --reload --port 8000 --proxy-headers --forwarded-allow-ips 192.168.111.140
 ```
 Serverul va asculta pe toate interfețele de rețea, portul **`8000`**. Local îl poți accesa la **`http://127.0.0.1:8000`**, iar de pe alt dispozitiv din aceeași rețea la **`http://IP-ul-calculatorului:8000`**.
+Proxy-ul de încredere este `192.168.111.140` (Nginx Proxy Manager); doar antetele `X-Forwarded-*` transmise de această adresă vor fi folosite pentru schema și IP-ul clientului.
 
 ### 3. Documentație interactivă Swagger UI
 Odată pornit serverul, deschide în browser:
