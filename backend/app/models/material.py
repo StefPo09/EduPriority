@@ -13,6 +13,7 @@ class Material(Base):
     type = Column(String(50), default="Fișier", nullable=False)
     size = Column(String(50), nullable=False)
     icon = Column(String(10), default="📄", nullable=False)
+    teacher_id = Column(String(36), nullable=True, index=True)
     file_path = Column(String(500), nullable=True)
     uploaded_at = Column(
         String(40),

@@ -1,9 +1,10 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.config import CORS_ORIGINS, CORS_ORIGIN_REGEX
+from app.config import CORS_ORIGINS, CORS_ORIGIN_REGEX, SEED_DEMO_DATA
 from app.database import engine, Base, SessionLocal
 from app.services.seed_data import seed_database
+from sqlalchemy import inspect, text
 from app.routers import (
     auth_router,
     teachers_router,
@@ -19,12 +20,50 @@ from app.routers import (
 async def lifespan(app: FastAPI):
     # Initialize DB tables
     Base.metadata.create_all(bind=engine)
-    # Seed initial data if empty
-    db = SessionLocal()
-    try:
-        seed_database(db)
-    finally:
-        db.close()
+    with engine.begin() as connection:
+        columns = {
+            column["name"]
+            for column in inspect(connection).get_columns("users")
+        }
+        if "subjects_json" not in columns:
+            connection.execute(
+                text("ALTER TABLE users ADD COLUMN subjects_json VARCHAR(1000) DEFAULT '[]' NOT NULL")
+            )
+        if "class_name" not in columns:
+            connection.execute(
+                text("ALTER TABLE users ADD COLUMN class_name VARCHAR(100)")
+            )
+        class_columns = {
+            column["name"]
+            for column in inspect(connection).get_columns("school_classes")
+        }
+        if "teacher_ids_json" not in class_columns:
+            connection.execute(
+                text("ALTER TABLE school_classes ADD COLUMN teacher_ids_json VARCHAR(1000) DEFAULT '[]' NOT NULL")
+            )
+        curriculum_columns = {
+            column["name"]
+            for column in inspect(connection).get_columns("curriculum_items")
+        }
+        if "subject" not in curriculum_columns:
+            connection.execute(
+                text("ALTER TABLE curriculum_items ADD COLUMN subject VARCHAR(100) DEFAULT 'Nespecificată' NOT NULL")
+            )
+        material_columns = {
+            column["name"]
+            for column in inspect(connection).get_columns("materials")
+        }
+        if "teacher_id" not in material_columns:
+            connection.execute(
+                text("ALTER TABLE materials ADD COLUMN teacher_id VARCHAR(36)")
+            )
+    if SEED_DEMO_DATA:
+        # Seed initial data if empty
+        db = SessionLocal()
+        try:
+            seed_database(db)
+        finally:
+            db.close()
     yield
 
 app = FastAPI(

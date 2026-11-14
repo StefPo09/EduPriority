@@ -7,6 +7,9 @@ export async function POST(request: Request) {
     email?: string;
     password?: string;
     role?: AccountRole;
+    school?: string;
+    class_name?: string;
+    subjects?: string[];
   };
 
   if (
@@ -15,6 +18,7 @@ export async function POST(request: Request) {
     !body.password ||
     body.password.length < 8 ||
     (body.role !== "teacher" && body.role !== "student")
+    || (body.role === "teacher" && (!body.school?.trim() || !body.subjects?.length))
   ) {
     return NextResponse.json(
       {
@@ -30,6 +34,9 @@ export async function POST(request: Request) {
     body.email.trim(),
     body.password,
     body.role,
+    body.school?.trim(),
+    body.subjects,
+    body.class_name?.trim(),
   );
   if (!account) {
     return NextResponse.json(

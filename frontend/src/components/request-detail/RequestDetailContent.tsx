@@ -1,15 +1,35 @@
 import PriorityBadge, { type Priority } from "@/components/shared/PriorityBadge";
 import { useParams } from "react-router";
-import { getRequest, updateRequest } from "@/lib/requests";
+import {
+  belongsToCurrentAccount,
+  getRequest,
+  updateRequest,
+} from "@/lib/requests";
 import { useEffect, useState } from "react";
 
 export default function RequestDetailContent() {
   const { id } = useParams();
   const [request, setRequest] = useState<Awaited<ReturnType<typeof getRequest>>>();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [accountRole] = useState<"teacher" | "student" | null>(() => {
+    try {
+      if (typeof window === "undefined") return null;
+      const storedAccount = localStorage.getItem("edupriority:account");
+      const account = storedAccount
+        ? (JSON.parse(storedAccount) as { role?: "teacher" | "student" })
+        : undefined;
+      return account?.role ?? null;
+    } catch {
+      return null;
+    }
+  });
 
   useEffect(() => {
-    if (id) void getRequest(id).then(setRequest);
+    if (id) {
+      void getRequest(id).then((result) => {
+        setRequest(result && belongsToCurrentAccount(result) ? result : undefined);
+      });
+    }
   }, [id]);
 
   if (!request) {
@@ -21,6 +41,7 @@ export default function RequestDetailContent() {
   }
 
   const isResolved = request.status === "resolved";
+  const canManageRequest = accountRole === "teacher";
 
   async function toggleResolved() {
     if (!request || isUpdating) return;
@@ -106,24 +127,26 @@ export default function RequestDetailContent() {
           <PriorityBadge score={request.priority} showLabel />
         </section>
       </div>
-      <div className="mt-6 flex flex-wrap items-center gap-2.5">
-        <button
-          className="min-h-10 rounded-lg bg-primary px-4 font-semibold text-surface hover:brightness-90 disabled:opacity-60"
-          disabled={isUpdating}
-          onClick={() => void toggleResolved()}
-          type="button"
-        >
-          {isResolved ? "Redeschide cererea" : "Marchează rezolvat"}
-        </button>
-        <button
-          className="min-h-10 rounded-lg border border-border bg-surface px-4 font-semibold text-ink hover:border-primary-soft hover:bg-primary-soft hover:text-primary disabled:opacity-60"
-          disabled={isUpdating}
-          onClick={() => void cyclePriority()}
-          type="button"
-        >
-          Schimbă prioritatea ({request.priority} → {(request.priority % 5) + 1})
-        </button>
-      </div>
+      {canManageRequest && (
+        <div className="mt-6 flex flex-wrap items-center gap-2.5">
+          <button
+            className="min-h-10 rounded-lg bg-primary px-4 font-semibold text-surface hover:brightness-90 disabled:opacity-60"
+            disabled={isUpdating}
+            onClick={() => void toggleResolved()}
+            type="button"
+          >
+            {isResolved ? "Redeschide cererea" : "Marchează rezolvat"}
+          </button>
+          <button
+            className="min-h-10 rounded-lg border border-border bg-surface px-4 font-semibold text-ink hover:border-primary-soft hover:bg-primary-soft hover:text-primary disabled:opacity-60"
+            disabled={isUpdating}
+            onClick={() => void cyclePriority()}
+            type="button"
+          >
+            Schimbă prioritatea ({request.priority} → {(request.priority % 5) + 1})
+          </button>
+        </div>
+      )}
     </>
   );
 }

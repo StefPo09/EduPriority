@@ -5,9 +5,9 @@ import RequestTable from "../components/dashboard/RequestTable";
 
 export default function DashboardPage() {
   return (
-    <div className="w-full">
+    <div className="printable-page w-full">
       <PageHeader />
-      <section className="overflow-hidden rounded-xl border border-border bg-surface">
+      <section className="printable-requests overflow-hidden rounded-xl border border-border bg-surface">
         <RequestTable />
       </section>
     </div>

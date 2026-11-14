@@ -31,7 +31,7 @@ export default function Navigation() {
 
   const visibleLinks = isStudent
     ? links.filter((link) =>
-        ["/home", "/dashboard", "/settings"].includes(link.to),
+        ["/home", "/dashboard", "/schedule", "/settings"].includes(link.to),
       )
     : links;
 
@@ -65,12 +65,6 @@ export default function Navigation() {
         className="mt-4 block rounded-lg bg-primary px-3 py-2.5 text-center text-sm font-semibold text-surface hover:brightness-90"
       >
         {isStudent ? "+ Întreabă un profesor" : "+ Cerere noua"}
-      </NavLink>
-      <NavLink
-        to="/export"
-        className="mt-2 block px-3 py-2 text-center text-sm text-muted hover:text-primary"
-      >
-        Export CSV / Print
       </NavLink>
     </aside>
   );

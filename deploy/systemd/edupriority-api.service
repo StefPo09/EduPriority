@@ -1,0 +1,17 @@
+[Unit]
+Description=EduPriority API
+After=network.target
+
+[Service]
+Type=simple
+User=edupriority
+Group=edupriority
+WorkingDirectory=/srv/edupriority/app/backend
+EnvironmentFile=/etc/edupriority/api.env
+ExecStart=/srv/edupriority/app/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8101 --no-proxy-headers
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

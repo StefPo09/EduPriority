@@ -4,15 +4,18 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from app.database import get_db
+from app.auth import require_role
+from app.models.user import User
 from app.models.request import StudentRequest
 
 router = APIRouter(prefix="/export", tags=["Export"])
 
 @router.get("/csv")
-def export_csv(db: Session = Depends(get_db)):
+def export_csv(db: Session = Depends(get_db), current_user: User = Depends(require_role("teacher"))):
     requests = (
         db.query(StudentRequest)
         .order_by(StudentRequest.priority.desc(), StudentRequest.created_at.desc())
+        .filter(StudentRequest.teacher_id == current_user.id)
         .all()
     )
 

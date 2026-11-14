@@ -1,7 +1,14 @@
 import type { NextConfig } from "next";
+import { networkInterfaces } from "node:os";
+
+const lanAddresses = Object.values(networkInterfaces())
+  .flat()
+  .filter((address) => address && address.family === "IPv4" && !address.internal)
+  .map((address) => address!.address);
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+  allowedDevOrigins: [...lanAddresses, "edupriority.adv.ro"],
   async rewrites() {
     return [
       { source: "/home", destination: "/" },

@@ -12,7 +12,6 @@ import { useEffect } from "react";
 import NewRequestPage from "@/app-pages/NewRequestPage";
 import DashboardPage from "@/app-pages/DashboardPage";
 import RequestDetailPage from "@/app-pages/RequestDetailPage";
-import ExportPage from "@/app-pages/ExportPage";
 import HomePage from "@/app-pages/HomePage";
 import StartPage from "@/app-pages/StartPage";
 import { LoginPage, SignupPage } from "@/app-pages/AuthPages";
@@ -67,7 +66,6 @@ function AppContent() {
           <Route path="/schedule" element={<SchedulePage />} />
           <Route path="/class" element={<ClassPage />} />
           <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/export" element={<ExportPage />} />
         </Routes>
       </main>
     </div>

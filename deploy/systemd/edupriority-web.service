@@ -1,0 +1,18 @@
+[Unit]
+Description=EduPriority Next.js web application
+After=network.target edupriority-api.service
+
+[Service]
+Type=simple
+User=edupriority
+Group=edupriority
+WorkingDirectory=/srv/edupriority/app/frontend
+Environment=NODE_ENV=production
+EnvironmentFile=/etc/edupriority/web.env
+ExecStart=/srv/edupriority/app/frontend/node_modules/.bin/next start --hostname ${FRONTEND_HOST} --port 3001
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

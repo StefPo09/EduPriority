@@ -27,5 +27,21 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json(account);
+  const safeAccount = { ...account } as typeof account & {
+    accessToken?: string;
+    access_token?: string;
+  };
+  delete safeAccount.accessToken;
+  delete safeAccount.access_token;
+  const response = NextResponse.json(safeAccount);
+  if ("accessToken" in account && account.accessToken) {
+    response.cookies.set("edupriority_access_token", account.accessToken, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60 * 8,
+    });
+  }
+  return response;
 }

@@ -3,7 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import PageHeader from "../components/calendar/PageHeader";
-import { getRequests, type StudentRequest } from "@/lib/requests";
+import {
+  getCurrentAccountRequestFilters,
+  getRequests,
+  type StudentRequest,
+} from "@/lib/requests";
 
 const weekDays = ["Lun", "Mar", "Mie", "Joi", "Vin", "Sâm", "Dum"];
 const dateKey = (date: Date) => {
@@ -31,7 +35,7 @@ export default function CalendarPage() {
     const refresh = async () => {
       setLoading(true);
       try {
-        setRequests(await getRequests());
+        setRequests(await getRequests(getCurrentAccountRequestFilters()));
         setLoadError("");
       } catch {
         setLoadError("Nu s-au putut încărca deadline-urile. Încearcă din nou.");

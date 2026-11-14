@@ -24,7 +24,7 @@ export default function PriorityBadge({
   };
   return (
     <span
-      className={`inline-flex min-h-8 min-w-8 items-center justify-center rounded-full px-2 text-sm text-surface ${colors[score]}`}
+      className={`inline-flex min-h-8 min-w-8 items-center justify-center rounded-full px-2 text-sm text-white ${colors[score]}`}
     >
       <strong>{score}</strong>
       {showLabel && <span className="ml-2">{labels[score]}</span>}

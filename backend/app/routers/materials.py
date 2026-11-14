@@ -3,12 +3,14 @@ import shutil
 from pathlib import Path
 from typing import List, Optional
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, status
+from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, status, Query
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
+from app.auth import get_current_user, require_role
 from app.config import UPLOADS_DIR
 from app.models.material import Material
+from app.models.user import User
 from app.schemas.material import MaterialOut
 
 router = APIRouter(prefix="/materials", tags=["Materials"])
@@ -38,8 +40,23 @@ def format_size(bytes_size: int) -> str:
         return f"{round(bytes_size / (1024 * 1024), 1)} MB"
 
 @router.get("", response_model=List[MaterialOut], response_model_by_alias=True)
-def list_materials(db: Session = Depends(get_db)):
-    materials = db.query(Material).order_by(Material.uploaded_at.desc()).all()
+def list_materials(
+    teacher_id: Optional[str] = Query(None, alias="teacherId"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    query = db.query(Material)
+    if current_user.role == "teacher":
+        if teacher_id and teacher_id != current_user.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Nu poți accesa materialele altui profesor.")
+        query = query.filter(Material.teacher_id == current_user.id)
+    elif teacher_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Filtrul nu este permis pentru elevi.")
+    else:
+        query = query.filter(Material.class_name == current_user.class_name)
+    if teacher_id and current_user.role == "teacher":
+        query = query.filter(Material.teacher_id == teacher_id)
+    materials = query.order_by(Material.uploaded_at.desc()).all()
     return materials
 
 @router.post("", response_model=MaterialOut, status_code=status.HTTP_201_CREATED, response_model_by_alias=True)
@@ -47,7 +64,9 @@ async def upload_material(
     file: UploadFile = File(...),
     subject: Optional[str] = Form("Nespecificată"),
     class_name: Optional[str] = Form("Nespecificată"),
+    teacher_id: Optional[str] = Form(None),
     db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("teacher")),
 ):
     if not file.filename:
         raise HTTPException(
@@ -76,6 +95,7 @@ async def upload_material(
         type=file.content_type or file.filename.split(".")[-1].upper(),
         size=size_str,
         icon=icon,
+        teacher_id=current_user.id,
         file_path=str(saved_path),
         uploaded_at=datetime.now(timezone.utc).isoformat(),
     )
@@ -85,13 +105,17 @@ async def upload_material(
     return material
 
 @router.get("/{id}/download")
-def download_material(id: str, db: Session = Depends(get_db)):
+def download_material(id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     mat = db.query(Material).filter(Material.id == id).first()
     if not mat or not mat.file_path or not Path(mat.file_path).exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Fișierul nu a fost găsit pe server.",
         )
+    if current_user.role == "teacher" and mat.teacher_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Nu ai permisiunea necesară.")
+    if current_user.role == "student" and mat.class_name != current_user.class_name:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Nu ai permisiunea necesară.")
     return FileResponse(
         path=mat.file_path,
         filename=mat.name,

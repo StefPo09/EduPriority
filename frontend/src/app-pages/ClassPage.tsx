@@ -12,17 +12,28 @@ export default function ClassPage() {
   const [className, setClassName] = useState("a 11-a A");
   const [summary, setSummary] = useState<ClassSummary>();
   const [classes, setClasses] = useState<string[]>([]);
+  const [teacherId] = useState<string | undefined>(() => {
+    if (typeof window === "undefined") return undefined;
+    try {
+      const account = JSON.parse(
+        localStorage.getItem("edupriority:account") ?? "{}",
+      ) as { id?: string; role?: "teacher" | "student" };
+      return account.role === "teacher" ? account.id : undefined;
+    } catch {
+      return undefined;
+    }
+  });
 
   useEffect(() => {
-    void getClasses().then((items) => {
+    void getClasses(teacherId).then((items) => {
       setClasses(items);
       if (items.length) setClassName(items[0]);
     });
-  }, []);
+  }, [teacherId]);
 
   useEffect(() => {
-    void getClassSummary(className).then(setSummary);
-  }, [className]);
+    void getClassSummary(className, teacherId).then(setSummary);
+  }, [className, teacherId]);
 
   return (
     <div className="w-full">

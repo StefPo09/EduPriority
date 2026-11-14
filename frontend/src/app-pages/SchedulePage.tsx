@@ -11,33 +11,68 @@ import {
 const days = ["Luni", "Marti", "Miercuri", "Joi", "Vineri"];
 
 export default function SchedulePage() {
-  const [className, setClassName] = useState("Clasa a 11-a A");
+  const [{ className, isStudent }] = useState(() => {
+    try {
+      const account = JSON.parse(
+        localStorage.getItem("edupriority:account") ?? "{}",
+      ) as { role?: "teacher" | "student"; className?: string; class_name?: string };
+      return {
+        isStudent: account.role === "student",
+        className:
+          account.role === "student"
+            ? account.className ?? account.class_name ?? ""
+            : "Clasa a 11-a A",
+      };
+    } catch {
+      return { isStudent: false, className: "Clasa a 11-a A" };
+    }
+  });
+  const [selectedClass, setSelectedClass] = useState(className);
   const [schedule, setSchedule] = useState<Schedule>();
   const [classes, setClasses] = useState<string[]>([]);
+  const [teacherId] = useState<string | undefined>(() => {
+    if (typeof window === "undefined") return undefined;
+    try {
+      const account = JSON.parse(
+        localStorage.getItem("edupriority:account") ?? "{}",
+      ) as { id?: string; role?: "teacher" | "student" };
+      return account.role === "teacher" ? account.id : undefined;
+    } catch {
+      return undefined;
+    }
+  });
 
   useEffect(() => {
-    void getClasses().then((items) => {
+    if (isStudent) return;
+    void getClasses(teacherId).then((items) => {
       setClasses(items);
-      if (items.length) setClassName(items[0]);
+      if (items.length) setSelectedClass(items[0]);
     });
-  }, []);
+  }, [isStudent, teacherId]);
 
   useEffect(() => {
-    void getSchedule(className).then(setSchedule);
-  }, [className]);
+    if (selectedClass) void getSchedule(selectedClass, teacherId).then(setSchedule);
+  }, [selectedClass, teacherId]);
 
   return (
     <div className="w-full">
       <PageHeader />
-      <select
-        className="mb-5 rounded-lg border border-border bg-surface px-3 py-2.5"
-        value={className}
-        onChange={(event) => setClassName(event.target.value)}
-      >
-        {classes.map((availableClass) => (
-          <option key={availableClass}>{availableClass}</option>
-        ))}
-      </select>
+      {!isStudent && (
+        <select
+          className="mb-5 rounded-lg border border-border bg-surface px-3 py-2.5"
+          value={selectedClass}
+          onChange={(event) => setSelectedClass(event.target.value)}
+        >
+          {classes.map((availableClass) => (
+            <option key={availableClass}>{availableClass}</option>
+          ))}
+        </select>
+      )}
+      {isStudent && !selectedClass && (
+        <p className="mb-5 rounded-xl border border-border bg-surface p-5 text-sm text-muted">
+          Contul tău nu are încă o clasă asociată.
+        </p>
+      )}
       <section className="overflow-x-auto rounded-xl border border-border bg-surface">
         <table className="w-full min-w-160 border-collapse text-left">
           <thead>
@@ -58,7 +93,11 @@ export default function SchedulePage() {
                 </td>
                 {days.map((day, index) => (
                   <td
-                    className="border-b border-border p-4"
+                    className={`border-b border-border p-4 ${
+                      slot.taughtSubjects?.[index]
+                        ? "bg-primary-soft font-semibold text-primary"
+                        : ""
+                    }`}
                     key={`${slot.time}-${day}`}
                   >
                     {slot.subjects[index] || "—"}
@@ -74,7 +113,7 @@ export default function SchedulePage() {
           </p>
         )}
       </section>
-      <section className="mt-5 rounded-xl border border-border bg-surface p-5">
+      {!isStudent && <section className="mt-5 rounded-xl border border-border bg-surface p-5">
         <h2 className="mb-4 font-semibold">Programa clasei</h2>
         {schedule?.curriculum.map((item) => (
           <div
@@ -82,7 +121,9 @@ export default function SchedulePage() {
             key={item.title}
           >
             <span>{item.title}</span>
-            <span className="text-sm text-muted">{item.status}</span>
+            <span className="text-sm text-muted">
+              {item.subject} · {item.status}
+            </span>
           </div>
         ))}
         {!schedule?.curriculum.length && (
@@ -90,7 +131,7 @@ export default function SchedulePage() {
             Nu există programă în baza de date pentru această clasă.
           </p>
         )}
-      </section>
+      </section>}
     </div>
   );
 }

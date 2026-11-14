@@ -6,6 +6,7 @@ class SchoolClass(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), unique=True, nullable=False)
+    teacher_ids_json = Column(String(1000), default="[]", nullable=False)
 
 class ScheduleSlot(Base):
     __tablename__ = "schedule_slots"
@@ -21,4 +22,5 @@ class CurriculumItem(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     class_name = Column(String(100), nullable=False, index=True)
     title = Column(String(200), nullable=False)
+    subject = Column(String(100), nullable=False, default="Nespecificată")
     status = Column(String(50), nullable=False, default="În desfășurare")

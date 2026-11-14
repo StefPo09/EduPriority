@@ -1,4 +1,5 @@
 import type { StudentRequest } from "./requests";
+import { cookies } from "next/headers";
 
 export type Material = {
   id: string;
@@ -8,6 +9,7 @@ export type Material = {
   type: string;
   size: string;
   icon: string;
+  teacherId?: string;
 };
 
 export type ClassSummary = {
@@ -20,8 +22,8 @@ export type ClassSummary = {
 
 export type Schedule = {
   className: string;
-  slots: Array<{ time: string; subjects: string[] }>;
-  curriculum: Array<{ title: string; status: string }>;
+  slots: Array<{ time: string; subjects: string[]; taughtSubjects?: boolean[] }>;
+  curriculum: Array<{ title: string; status: string; subject: string }>;
 };
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://127.0.0.1:8000";
@@ -30,33 +32,67 @@ const materials: Material[] = [];
 const classSummaries: ClassSummary[] = [];
 const schedules: Schedule[] = [];
 
+async function authHeaders(): Promise<Record<string, string>> {
+  const token = (await cookies()).get("edupriority_access_token")?.value;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function rejectBackendFailure(response: Response) {
+  if (process.env.NODE_ENV === "production") {
+    throw Object.assign(new Error(`Backend request failed with status ${response.status}`), { status: response.status });
+  }
+}
+
 /*
  * Connected to Python FastAPI backend at BACKEND_URL.
- * Includes graceful fallback if backend is offline.
+ * Includes a development fallback if the backend is unavailable.
  */
-export async function listRequests(): Promise<StudentRequest[]> {
+export async function listRequests(filters?: {
+  teacherId?: string;
+  student?: string;
+}): Promise<StudentRequest[]> {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/requests`, { cache: "no-store" });
+    const params = new URLSearchParams();
+    if (filters?.teacherId) params.set("teacherId", filters.teacherId);
+    if (filters?.student) params.set("student", filters.student);
+    const query = params.toString();
+    const response = await fetch(
+      `${BACKEND_URL}/api/requests${query ? `?${query}` : ""}`,
+      { cache: "no-store", headers: await authHeaders() },
+    );
     if (response.ok) {
       return await response.json();
     }
-  } catch {
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback
   }
 
-  return [...requests].sort(
+  return requests
+    .filter((request) => {
+      if (filters?.teacherId && request.teacherId !== filters.teacherId) {
+        return false;
+      }
+      return !(filters?.student &&
+        !request.student.toLowerCase().includes(filters.student.toLowerCase()));
+
+    })
+    .sort(
     (first, second) => second.priority - first.priority,
   );
 }
 
 export async function findRequest(id: string): Promise<StudentRequest | undefined> {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/requests/${id}`, { cache: "no-store" });
+    const response = await fetch(`${BACKEND_URL}/api/requests/${id}`, { cache: "no-store", headers: await authHeaders() });
     if (response.ok) {
       return await response.json();
     }
     if (response.status === 404) return undefined;
-  } catch {
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback
   }
 
@@ -69,13 +105,15 @@ export async function insertRequest(
   try {
     const response = await fetch(`${BACKEND_URL}/api/requests`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify(input),
     });
     if (response.ok) {
       return await response.json();
     }
-  } catch {
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback
   }
 
@@ -95,13 +133,16 @@ export async function updateRequest(
   try {
     const response = await fetch(`${BACKEND_URL}/api/requests/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify(updates),
     });
     if (response.ok) {
       return await response.json();
     }
-  } catch {
+    if (process.env.NODE_ENV === "production" && response.status === 404) return undefined;
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback
   }
 
@@ -112,24 +153,33 @@ export async function updateRequest(
   return req;
 }
 
-export async function listMaterials(): Promise<Material[]> {
+export async function listMaterials(teacherId?: string): Promise<Material[]> {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/materials`, { cache: "no-store" });
+    const query = teacherId ? `?teacherId=${encodeURIComponent(teacherId)}` : "";
+    const response = await fetch(`${BACKEND_URL}/api/materials${query}`, { cache: "no-store", headers: await authHeaders() });
     if (response.ok) {
       return await response.json();
     }
-  } catch {
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback
   }
 
-  return materials;
+  return teacherId
+    ? materials.filter((material) => material.teacherId === teacherId)
+    : materials;
 }
 
 export async function insertMaterial(file: {
   name: string;
   size: number;
   type: string;
+  teacherId?: string;
 }): Promise<Material> {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Local material insertion is unavailable in production");
+  }
   const material: Material = {
     id: crypto.randomUUID(),
     name: file.name,
@@ -138,18 +188,25 @@ export async function insertMaterial(file: {
     type: file.type || "Fișier",
     size: `${Math.max(1, Math.round(file.size / 1024))} KB`,
     icon: "📄",
+    teacherId: file.teacherId,
   };
   materials.unshift(material);
   return material;
 }
 
-export async function findClassSummary(className: string): Promise<ClassSummary> {
+export async function findClassSummary(
+  className: string,
+  teacherId?: string,
+): Promise<ClassSummary> {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/classes/${encodeURIComponent(className)}`, { cache: "no-store" });
+    const query = teacherId ? `?teacherId=${encodeURIComponent(teacherId)}` : "";
+    const response = await fetch(`${BACKEND_URL}/api/classes/${encodeURIComponent(className)}${query}`, { cache: "no-store", headers: await authHeaders() });
     if (response.ok) {
       return await response.json();
     }
-  } catch {
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback
   }
 
@@ -164,26 +221,32 @@ export async function findClassSummary(className: string): Promise<ClassSummary>
   );
 }
 
-export async function listClasses(): Promise<string[]> {
+export async function listClasses(teacherId?: string): Promise<string[]> {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/classes`, { cache: "no-store" });
+    const query = teacherId ? `?teacherId=${encodeURIComponent(teacherId)}` : "";
+    const response = await fetch(`${BACKEND_URL}/api/classes${query}`, { cache: "no-store", headers: await authHeaders() });
     if (response.ok) {
       return await response.json();
     }
-  } catch {
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback
   }
 
   return classSummaries.map((summary) => summary.className);
 }
 
-export async function findSchedule(className: string): Promise<Schedule> {
+export async function findSchedule(className: string, teacherId?: string): Promise<Schedule> {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/schedules/${encodeURIComponent(className)}`, { cache: "no-store" });
+    const query = teacherId ? `?teacherId=${encodeURIComponent(teacherId)}` : "";
+    const response = await fetch(`${BACKEND_URL}/api/schedules/${encodeURIComponent(className)}${query}`, { cache: "no-store", headers: await authHeaders() });
     if (response.ok) {
       return await response.json();
     }
-  } catch {
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback
   }
 
@@ -198,11 +261,13 @@ export async function findSchedule(className: string): Promise<Schedule> {
 
 export async function getOverview() {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/overview`, { cache: "no-store" });
+    const response = await fetch(`${BACKEND_URL}/api/overview`, { cache: "no-store", headers: await authHeaders() });
     if (response.ok) {
       return await response.json();
     }
-  } catch {
+    rejectBackendFailure(response);
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") throw error;
     // Backend offline, fallback
   }
 
@@ -220,8 +285,8 @@ export async function getOverview() {
   return {
     urgent: {
       critical: todayRequests.filter((request) => request.priority === 5).length,
-      medium: todayRequests.filter((request) => request.priority === 3).length,
-      low: todayRequests.filter((request) => request.priority <= 2).length,
+      medium: todayRequests.filter((request) => request.priority >= 2 && request.priority <= 4).length,
+      low: todayRequests.filter((request) => request.priority <= 1).length,
     },
     week: {
       received: currentWeek.length,

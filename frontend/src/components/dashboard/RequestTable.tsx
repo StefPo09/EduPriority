@@ -3,13 +3,18 @@
 import { Link } from "react-router";
 import PriorityBadge from "@/components/shared/PriorityBadge";
 import { useEffect, useState } from "react";
-import { getRequests, type StudentRequest } from "@/lib/requests";
+import {
+  getCurrentAccountRequestFilters,
+  getRequests,
+  type StudentRequest,
+} from "@/lib/requests";
 
 export default function RequestTable() {
   const [requests, setRequests] = useState<StudentRequest[]>([]);
 
   useEffect(() => {
-    const refresh = () => getRequests().then(setRequests);
+    const refresh = () =>
+      getRequests(getCurrentAccountRequestFilters()).then(setRequests);
     void refresh();
     window.addEventListener("edupriority:requests-updated", refresh);
     return () =>
