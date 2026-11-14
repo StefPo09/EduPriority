@@ -14,7 +14,7 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3001](http://localhost:3001) with your browser to see the result. The server listens on all network interfaces, so devices on the same network can also connect at `http://192.168.111.89:3001` (replace the IP if the host address differs).
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
